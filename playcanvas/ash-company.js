@@ -15,6 +15,7 @@ function AshCompanyState() {
     this.fieldOutcome = null;
     this.credits = 0;
     this.serviceSpent = 0;
+    this.savedPose = null;
     this.crew = ASH_CREW.map(function (entry) { return Object.assign({}, entry); });
     this.reputation = { freeMarches: 0, roadCompany: 0 };
 }
@@ -46,9 +47,9 @@ AshCompanyState.prototype.buySupplies = function (kind) {
     return 'bought';
 };
 
-AshCompanyState.prototype.save = function (storage, turret) {
+AshCompanyState.prototype.save = function (storage, turret, pose) {
     storage.setItem(ASH_SAVE_KEY, JSON.stringify({
-        version: 1, fuel: this.fuel, ammo: this.ammo, turret: turret, fieldRecon: this.fieldRecon, fieldOutcome: this.fieldOutcome, serviceSpent: this.serviceSpent
+        version: 1, fuel: this.fuel, ammo: this.ammo, turret: turret, fieldRecon: this.fieldRecon, fieldOutcome: this.fieldOutcome, serviceSpent: this.serviceSpent, pose: pose || null
     }));
 };
 
@@ -75,6 +76,12 @@ AshCompanyState.prototype.load = function (storage) {
     if (!Number.isInteger(spent) || spent < 0 || spent > (reward ? reward.credits : 0)) {
         throw new Error('Invalid service expenses');
     }
+    const pose = saved.pose === undefined ? null : saved.pose;
+    if (pose !== null && (!Number.isFinite(pose.x) || !Number.isFinite(pose.z) ||
+        !Number.isFinite(pose.heading) || Math.abs(pose.x)>1e5 || Math.abs(pose.z)>1e5)) {
+        throw new Error('Invalid vehicle position');
+    }
+    this.savedPose = pose ? { x:pose.x,z:pose.z,heading:Math.atan2(Math.sin(pose.heading),Math.cos(pose.heading)) } : null;
     this.serviceSpent = spent;
     this.fieldRecon = fieldRecon;
     this.fieldOutcome = fieldOutcome;
@@ -134,8 +141,11 @@ if (typeof pc !== 'undefined') {
 
     AshCompany.prototype.save = function () {
         try {
-            this.state.save(window.localStorage, this.turret.t6.enabled ? 'T-6' : 'P-2');
-            this.message.textContent = 'Zapisano zapasy, wieżę i rozpoznanie.';
+            const p=this.entity.getPosition();
+            const drive=this.entity.script.acHeavyDrive;
+            this.state.save(window.localStorage, this.turret.t6.enabled ? 'T-6' : 'P-2',
+                {x:p.x,z:p.z,heading:drive.heading});
+            this.message.textContent = 'Zapisano pojazd i postęp.';
         } catch (error) {
             this.message.textContent = 'Zapis jest niedostępny.';
         }
@@ -145,15 +155,35 @@ if (typeof pc !== 'undefined') {
     AshCompany.prototype.load = function () {
         try {
             const turret = this.state.load(window.localStorage);
-            if (turret) this.turret.selectTurret(turret === 'T-6');
-            this.message.textContent = turret ? 'Wczytano zapasy, wieżę i rozpoznanie.' : 'Brak zapisu.';
+            if (turret) {
+                this.turret.selectTurret(turret === 'T-6');
+                const pose=this.state.savedPose;
+                this.message.textContent=pose && !this.restorePose(pose) ?
+                    'Wczytano postęp. Zapisane miejsce jest niedostępne.' : 'Wczytano postęp.';
+            } else this.message.textContent='Brak zapisu.';
             this.update();
         } catch (error) {
             this.message.textContent = 'Nie można odczytać zapisu.';
         }
         this.app.graphicsDevice.canvas.focus();
     };
+
+    AshCompany.prototype.restorePose = function (pose) {
+        const drive=this.entity.script.acHeavyDrive;
+        const systems=this.entity.script.borSystems;
+        if (!systems.canOccupy(pose.x,pose.z,pose.heading,true)) return false;
+        this.entity.setPosition(pose.x,systems.groundHeight(pose.x,pose.z),pose.z);
+        this.entity.setEulerAngles(0,pose.heading*pc.math.RAD_TO_DEG,0);
+        drive.heading=pose.heading;
+        drive.speed=0;
+        drive.turnRate=0;
+        systems.previousPosition.copy(this.entity.getPosition());
+        systems.previousHeading=pose.heading;
+        drive.updateCamera(0,true);
+        return true;
+    };
 }
+
 
 
 
