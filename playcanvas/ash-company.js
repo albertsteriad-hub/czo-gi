@@ -16,12 +16,14 @@ function AshCompanyState() {
     this.credits = 0;
     this.serviceSpent = 0;
     this.savedPose = null;
+    this.longBarrel = true;
+    this.fieldArmor = true;
     this.crew = ASH_CREW.map(function (entry) { return Object.assign({}, entry); });
     this.reputation = { freeMarches: 0, roadCompany: 0 };
 }
 
 AshCompanyState.prototype.consumeTravel = function (distance, turn) {
-    this.fuel = Math.max(0, this.fuel - .12 * Math.abs(distance) - .18 * Math.abs(turn));
+    this.fuel = Math.max(0, this.fuel - .045 * Math.abs(distance) - .18 * Math.abs(turn));
 };
 
 AshCompanyState.prototype.consumeRound = function () {
@@ -49,7 +51,7 @@ AshCompanyState.prototype.buySupplies = function (kind) {
 
 AshCompanyState.prototype.save = function (storage, turret, pose) {
     storage.setItem(ASH_SAVE_KEY, JSON.stringify({
-        version: 1, fuel: this.fuel, ammo: this.ammo, turret: turret, fieldRecon: this.fieldRecon, fieldOutcome: this.fieldOutcome, serviceSpent: this.serviceSpent, pose: pose || null
+        version: 1, fuel: this.fuel, ammo: this.ammo, turret: turret, fieldRecon: this.fieldRecon, fieldOutcome: this.fieldOutcome, serviceSpent: this.serviceSpent, pose: pose || null, longBarrel: this.longBarrel, fieldArmor: this.fieldArmor
     }));
 };
 
@@ -81,6 +83,10 @@ AshCompanyState.prototype.load = function (storage) {
         !Number.isFinite(pose.heading) || Math.abs(pose.x)>1e5 || Math.abs(pose.z)>1e5)) {
         throw new Error('Invalid vehicle position');
     }
+    if ((saved.longBarrel !== undefined && typeof saved.longBarrel !== 'boolean') ||
+        (saved.fieldArmor !== undefined && typeof saved.fieldArmor !== 'boolean')) throw new Error('Invalid vehicle configuration');
+    this.longBarrel = saved.longBarrel === undefined ? true : saved.longBarrel;
+    this.fieldArmor = saved.fieldArmor === undefined ? true : saved.fieldArmor;
     this.savedPose = pose ? { x:pose.x,z:pose.z,heading:Math.atan2(Math.sin(pose.heading),Math.cos(pose.heading)) } : null;
     this.serviceSpent = spent;
     this.fieldRecon = fieldRecon;
@@ -177,12 +183,16 @@ if (typeof pc !== 'undefined') {
         drive.heading=pose.heading;
         drive.speed=0;
         drive.turnRate=0;
+        const dynamics=this.entity.script.ashTrackDynamics;
+        if (dynamics&&dynamics.ready) dynamics.reset();
         systems.previousPosition.copy(this.entity.getPosition());
         systems.previousHeading=pose.heading;
         drive.updateCamera(0,true);
         return true;
     };
 }
+
+
 
 
 
