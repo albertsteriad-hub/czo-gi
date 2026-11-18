@@ -1,29 +1,39 @@
-# ASH CONVOY — plan realizacji
+# ASH CONVOY · Plan produkcji i kryteria odbioru
 
-## Etap 0: baza projektu
-- [x] Repozytorium GitHub i dokumentacja.
-- [x] Fundamenty skryptów jazdy i systemu zamiany wyglądu części (kod, bez sceny).
-- [ ] Połączenie edytora PlayCanvas przez MCP lub inny obsługiwany interfejs.
-- [ ] Zaimportowanie modeli/sceny do edytora i test uruchomienia.
+## A. Audyt
 
-## Etap 1: vertical slice
-1. **Jeden czołg** o masie około 45–65 t, szeroki kadłub, ciężkie gąsienice i niezależna wieża.
-2. Co najmniej 3 realnie różne modele wież, 3 działa i 2 kadłuby.
-3. Model jazdy z ograniczeniem trakcji, rozbiegiem, bezwładnością skrętu i oporem podłoża.
-4. Mapa testowa: odcinek drogi, wieś, las, nierówny grunt i teren przemysłowy.
-5. Materiały PBR (metalness/roughness/normal), warstwowe dźwięki silnika/gąsienic oraz przestrzenne eksplozje.
-6. Warsztat: podgląd zmiany sylwetki przed zakupem; kontrola masy i poboru mocy.
-7. Testy FPS, kolizji i jazdy na 3 nawierzchniach.
+Projekt PlayCanvas 1651220, scena Untitled (2660356), gałąź main. Istnieją aktywny BOR_MODULAR_TANK, wyłączony prototyp AC Heavy Tank i północna trasa. Assets pokazało 15 kontenerów BÓR. Lokalne pliki obejmują pięć plansz, 15 GLB, BOR.blend, dwa generatory Blender Python oraz weryfikację GLB. Blender 5.3.0 działa. Lokalny folder nie ma .git. GitHub albertsteriad-hub/czo-gi jest dostępny przez konektor. Na początku audytu runtime Launch nie był połączony. Widoczność i stan edytora nie potwierdzają działania kodu w Launch.
 
-## Etap 2: gra
-- System załogi i stanowisk.
-- Eskorta konwoju, odzysk części, ekonomia paliwa i napraw.
-- Wrogie pojazdy, trafienia i modułowe uszkodzenia.
-- Zapisy gry i optymalizacja LOD.
+## B. Dokumentacja
 
-## Warunki jakości
-- Moduł nie może być wyłącznie zmianą statystyk: musi przełączać odrębny model/obiekt 3D.
-- Masa ma wpływać na dynamikę jazdy i skrętu.
-- Żadnych pustych kilometrów pustyni jako substytutu mapy.
-- Niezmienny cel stylistyczny: masywność, zabrudzenie, stal, rdza, brak kreskówkowej saturacji.
-- Cel wizualny „zbliżać się do jakości gier czołgowych AAA” to kierunek, a nie obietnica jakości bez profesjonalnych zasobów 3D.
+WORLD_BIBLE, GAME_DESIGN, VEHICLE_SYSTEM, ART_DIRECTION, QUEST_DESIGN i ROADMAP opisują pełną wizję. Dokumentacja i kod podlegają synchronizacji z GitHub w granicach uprawnień. Zasoby źródłowe pozostają poza synchronizacją, dopóki nie ma uzgodnionego sposobu przechowywania binariów.
+
+## C. Fundament
+
+Rozdziel odpowiedzialność za pojazdy, załogę, kontrakty, frakcje, świat, ekwipunek i ekonomię, zapis oraz audio. Dla przedmiotów, zleceń, mutantów i frakcji używaj danych ze stałymi identyfikatorami i wersjonuj format zapisu. Oddziel logikę reguł od integracji z PlayCanvas. Przed większą zmianą utwórz punkt kontrolny i zachowaj istniejące prototypy.
+
+## D. Pierwszy grywalny wycinek
+
+| Obszar | Kryterium zaliczenia |
+|---|---|
+| Pojazd | BÓR z autorskich GLB jeździ, zderza się z otoczeniem, ma działający obrót i wymianę P-2/T-6 |
+| Lokacja | Jeden dopracowany sektor łączy las, wieś, drogę i opuszczony teren przemysłowy |
+| Załoga | Pięć postaci ma role, podstawowe statystyki i dialogi reagujące na podróż lub kontrakt |
+| Kontrakt | Coś w zbożu przechodzi od rozpoznania po konsekwencje, z co najmniej dwoma wynikami |
+| Ekologia i anomalie | Dzikoryj reaguje na otoczenie. Szeptnik daje użyteczną wskazówkę i fałszywy sygnał |
+| Warsztat i ekonomia | Zmiana wieży zmienia siatkę i parametry. Paliwo, amunicja, naprawa, wypłata i co najmniej dwie reputacje wpływają na grę |
+| Trwałość | Zapis i odczyt zachowują stan pojazdu, zapasy, kontrakt i reputację w obsługiwanym zakresie |
+
+Buduj iteracyjnie. Kolejność pierwszych prac to działający rdzeń zasobów i zapisu, potwierdzenie jazdy i strzelania w Launch, sektor Dolin Osadników, kompletne zlecenie oraz warsztat. Szersze sektory, ekosystemy i główny wątek powstają po zaliczeniu wycinka. Demonstracje oznaczaj wprost.
+
+## E. Weryfikacja
+
+Sprawdź import, położenie i kolizje modułów, grunt, jazdę, zmianę wież, rezultat kontraktu, stan zasobów i odczyt po ponownym uruchomieniu. W raporcie podaj utworzone pliki i obiekty, wykonane testy, braki i następny krok. Przy blokadzie podaj dokładny błąd oraz wypróbowane drogi dostępu.
+
+## Pierwsza implementacja
+
+Skrypt ash-company.js przechowuje zapasy i pięć profili załogi. bor-systems.js zużywa paliwo wraz z ruchem i obrotem oraz odejmuje amunicję przy strzale. Zapis przeglądarkowy v1 pozwala przywrócić paliwo, amunicję i wieżę. Reputacja ma dwa wpisy początkowe. Załoga i reputacja nie mają jeszcze zdarzeń w grze. Przed zmianą zapisano punkt kontrolny PlayCanvas 6a4670dc-127c-454f-b871-30549e867ae8. Lokalnie zaliczono próby zużycia paliwa, limitu amunicji i poprawnego oraz błędnego zapisu. Próba nowego Launch została zablokowana przez mechanizm wyskakujących okien edytora.
+
+## Po pierwszym wycinku
+
+W starszym planie przewidziano zakres masy 45–65 t dla ciężkiego pojazdu, trzy wieże, trzy działa i dwa kadłuby, próby wydajności i jazdy na trzech nawierzchniach, eskortę konwoju, odzysk części, wrogie pojazdy i modułowe uszkodzenia. Zachowujemy te cele do rozbudowy po odbiorze pierwszego wycinka z P-2 i T-6.
