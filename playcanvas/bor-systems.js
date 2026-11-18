@@ -175,7 +175,7 @@ BorSystems.prototype.effect = function (name, shape, material) {
     return e;
 };
 
-BorSystems.prototype.fire = function () {
+BorSystems.prototype.fireCannon = function () {
     var company = this.entity.script.ashCompany;
     if (company && company.state && !company.state.consumeRound()) return;
     var turret = this.t6.enabled ? this.t6 : this.p2;
@@ -261,7 +261,7 @@ BorSystems.prototype.postUpdate = function (dt) {
     if (this.flashTime <= 0) this.flash.enabled = false;
     if (this.weaponCooldown === 0 &&
         (this.app.keyboard.isPressed(pc.KEY_SPACE) ||
-        (this.app.mouse && this.app.mouse.isPressed(pc.MOUSEBUTTON_LEFT)))) this.fire();
+        (this.app.mouse && this.app.mouse.isPressed(pc.MOUSEBUTTON_LEFT)))) this.fireCannon();
     if (this.shots.length) this.updateShots(dt);
 };
 
