@@ -146,9 +146,9 @@ BorSystems.prototype.groundHeight = function (x, z) {
     return world && world.ready ? world.surface(x,z,height) : height;
 };
 
-BorSystems.prototype.canOccupy = function (x, z, heading) {
+BorSystems.prototype.canOccupy = function (x, z, heading, ignoreFuel) {
     var company = this.entity.script.ashCompany;
-    if (company && company.state && company.state.fuel <= 0) return false;
+    if (!ignoreFuel && company && company.state && company.state.fuel <= 0) return false;
     var world = this.entity.script.ashWorld;
     if (world && world.ready) {
         if (!world.contains(x,z)) return false;
@@ -291,6 +291,7 @@ BorSystems.prototype.cleanup = function () {
     this.tracerMaterial.destroy();
     this.flashMaterial.destroy();
 };
+
 
 
 
