@@ -3,6 +3,7 @@ from pathlib import Path
 import json
 import math
 import random
+import sys
 import subprocess
 
 import bpy
@@ -16,7 +17,8 @@ js=r"""
 const fs=require('node:fs');
 const w=require(fs.existsSync('./ash-world.js')?'./ash-world.js':'./playcanvas/ash-world.js');
 const rows=[];
-for(let r=0;r<4;r++){
+const first=Number(process.argv[1]),count=Number(process.argv[2]);
+for(let r=first;r<first+count;r++){
  const v=[];
  for(let j=0;j<=61;j++)for(let i=0;i<=150;i++){
   const x=-300+i*4,z=765+r*183+j*3;
@@ -30,7 +32,9 @@ const rivers=w.north.periods.map((_,index)=>Array.from({length:151},(_,i)=>{
 }));
 console.log(JSON.stringify({rows,rivers,water:w.north.water}));
 """
-data=json.loads(subprocess.check_output(['node','-e',js],cwd=BASE,text=True))
+args=sys.argv[sys.argv.index('--')+1:] if '--' in sys.argv else []
+start,count=map(int,args[:2]) if len(args)>=2 else (0,4)
+data=json.loads(subprocess.check_output(['node','-e',js,str(start),str(count)],cwd=BASE,text=True))
 bpy.ops.wm.read_factory_settings(use_empty=True)
 
 def make_material(name,c,roughness):
@@ -66,7 +70,7 @@ def export(obj,name):
         use_selection=True,export_animations=False,export_vertex_color='ACTIVE')
 
 surface=make_material('Northern grass, scree and shore',(.83,.83,.83),.95)
-for row,samples in enumerate(data['rows']):
+for row,samples in enumerate(data['rows'],start=start):
     coords=[(x,-z,h) for x,z,h in samples]
     faces=[]
     for j in range(61):
@@ -85,8 +89,9 @@ for row,samples in enumerate(data['rows']):
 
 water=make_material('Cold river water',(.033,.102,.122),.25)
 verts,faces,colors=[],[],[]
-for river in data['rivers']:
-    start=len(verts)
+rivers=data['rivers'][2:] if start>=4 else data['rivers'][:2]
+for river in rivers:
+    river_start=len(verts)
     for x,z in river:
         for d in (-12,0,12):
             verts.append((x,-z+d,data['water']))
@@ -94,9 +99,12 @@ for river in data['rivers']:
             colors.append((f*.77,f*.93,f))
     for i in range(150):
         for j in range(2):
-            a=start+3*i+j
+            a=river_start+3*i+j
             faces.append((a,a+3,a+4,a+1))
-export(mesh_object('River ribbons',verts,faces,water,colors),'NORTH_RIVERS')
+export(mesh_object('River ribbons',verts,faces,water,colors),'NORTH_FAR_RIVER' if start>=4 else 'NORTH_RIVERS')
+
+if start>=4:
+    sys.exit(0)
 
 fir=make_material('Fir bark and needles',(.65,.65,.65),.96)
 verts,faces,colors=[],[],[]
@@ -114,7 +122,7 @@ for tier in range(7):
     h=1.48+tier*.62
     radius=1.84-tier*.225
     count=18
-    start=len(verts)
+    tier_start=len(verts)
     for i in range(count):
         angle=math.tau*i/count+tier*.46
         r=radius*rng.uniform(.78,1.17)*(1 if i%2 else .63)
@@ -124,7 +132,10 @@ for tier in range(7):
     verts.append((.03,0,h+1.67))
     colors.append((.116,.174,.085))
     for i in range(count):
-        faces.append((start+i,start+(i+1)%count,start+count))
+        faces.append((tier_start+i,tier_start+(i+1)%count,tier_start+count))
 export(mesh_object('Northern fir',verts,faces,fir,colors),'NORTH_FIR')
+
+
+
 
 
