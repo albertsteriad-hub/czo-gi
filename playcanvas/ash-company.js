@@ -11,6 +11,7 @@ const ASH_CREW = [
 function AshCompanyState() {
     this.fuel = ASH_CAPACITY.fuel;
     this.ammo = ASH_CAPACITY.ammo;
+    this.fieldRecon = 0;
     this.crew = ASH_CREW.map(function (entry) { return Object.assign({}, entry); });
     this.reputation = { freeMarches: 0, roadCompany: 0 };
 }
@@ -27,7 +28,7 @@ AshCompanyState.prototype.consumeRound = function () {
 
 AshCompanyState.prototype.save = function (storage, turret) {
     storage.setItem(ASH_SAVE_KEY, JSON.stringify({
-        version: 1, fuel: this.fuel, ammo: this.ammo, turret: turret
+        version: 1, fuel: this.fuel, ammo: this.ammo, turret: turret, fieldRecon: this.fieldRecon
     }));
 };
 
@@ -41,6 +42,11 @@ AshCompanyState.prototype.load = function (storage) {
         (saved.turret !== 'P-2' && saved.turret !== 'T-6')) {
         throw new Error('Invalid company save');
     }
+    const fieldRecon = saved.fieldRecon === undefined ? 0 : saved.fieldRecon;
+    if (!Number.isInteger(fieldRecon) || fieldRecon < 0 || fieldRecon > 3) {
+        throw new Error('Invalid field reconnaissance');
+    }
+    this.fieldRecon = fieldRecon;
     this.fuel = saved.fuel;
     this.ammo = saved.ammo;
     return saved.turret;
@@ -97,7 +103,7 @@ if (typeof pc !== 'undefined') {
     AshCompany.prototype.save = function () {
         try {
             this.state.save(window.localStorage, this.turret.t6.enabled ? 'T-6' : 'P-2');
-            this.message.textContent = 'Zapisano zapasy i wieżę.';
+            this.message.textContent = 'Zapisano zapasy, wieżę i rozpoznanie.';
         } catch (error) {
             this.message.textContent = 'Zapis jest niedostępny.';
         }
@@ -108,7 +114,7 @@ if (typeof pc !== 'undefined') {
         try {
             const turret = this.state.load(window.localStorage);
             if (turret) this.turret.selectTurret(turret === 'T-6');
-            this.message.textContent = turret ? 'Wczytano zapasy i wieżę.' : 'Brak zapisu.';
+            this.message.textContent = turret ? 'Wczytano zapasy, wieżę i rozpoznanie.' : 'Brak zapisu.';
             this.update();
         } catch (error) {
             this.message.textContent = 'Nie można odczytać zapisu.';
@@ -116,4 +122,5 @@ if (typeof pc !== 'undefined') {
         this.app.graphicsDevice.canvas.focus();
     };
 }
+
 
