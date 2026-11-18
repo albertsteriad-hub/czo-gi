@@ -42,7 +42,7 @@ if (typeof pc !== 'undefined') {
         const regional=this.app.root.findByName('World service posts');
         this.services=[this.app.root.findByName('BOR_SERVICE_POST')].concat(regional?regional.children:[])
             .filter(function (e) { return !!e; }).map(function (e) { return e.getPosition().clone(); });
-        this.rivers=[0,1].map(function (river) {
+        this.rivers=AshWorldData.north.periods.map(function (_,river) {
             return Array.from({length:76},function (_,i) {
                 const x=-300+i*8;
                 return [x,AshWorldData.riverLine(x,river)];
@@ -199,4 +199,5 @@ if (typeof pc !== 'undefined') {
         this.draw();
     };
 }
+
 
