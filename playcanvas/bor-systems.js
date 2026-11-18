@@ -42,6 +42,15 @@ BorSystems.prototype.initialize = function () {
     }, this);
 
     var north = this.app.root.findByName('BOR_NORTHERN_ROUTE');
+    var scenery = this.app.root.findByName('ASH_FIELD_SCENERY');
+    if (scenery) {
+        scenery.children.forEach(function (child) {
+            if (child.name !== 'ASH_SCENERY_BLOCKER') return;
+            var position = child.getPosition();
+            var size = child.getLocalScale();
+            this.drive.obstacles.push([position.x, position.z, size.x/2, size.z/2]);
+        }, this);
+    }
     this.barriers = [];
     this.targets = [];
     north.children.forEach(function (child) {
@@ -278,6 +287,7 @@ BorSystems.prototype.cleanup = function () {
     this.tracerMaterial.destroy();
     this.flashMaterial.destroy();
 };
+
 
 
 
