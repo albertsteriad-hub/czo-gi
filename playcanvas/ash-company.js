@@ -14,6 +14,7 @@ function AshCompanyState() {
     this.fieldRecon = 0;
     this.fieldOutcome = null;
     this.credits = 0;
+    this.serviceSpent = 0;
     this.crew = ASH_CREW.map(function (entry) { return Object.assign({}, entry); });
     this.reputation = { freeMarches: 0, roadCompany: 0 };
 }
@@ -30,14 +31,24 @@ AshCompanyState.prototype.consumeRound = function () {
 
 AshCompanyState.prototype.applyFieldOutcome = function () {
     const reward = typeof fieldReward === 'function' ? fieldReward(this.fieldOutcome) : null;
-    this.credits = reward ? reward.credits : 0;
+    this.credits = reward ? reward.credits - this.serviceSpent : 0;
     this.reputation.freeMarches = reward ? reward.freeMarches : 0;
     this.reputation.roadCompany = reward ? reward.roadCompany : 0;
 };
 
+AshCompanyState.prototype.buySupplies = function (kind) {
+    const offer = { fuel: { amount: 20, price: 12 }, ammo: { amount: 4, price: 14 } }[kind];
+    if (!offer || this[kind] >= ASH_CAPACITY[kind]) return 'full';
+    if (this.credits < offer.price) return 'funds';
+    this[kind] = Math.min(ASH_CAPACITY[kind], this[kind] + offer.amount);
+    this.credits -= offer.price;
+    this.serviceSpent += offer.price;
+    return 'bought';
+};
+
 AshCompanyState.prototype.save = function (storage, turret) {
     storage.setItem(ASH_SAVE_KEY, JSON.stringify({
-        version: 1, fuel: this.fuel, ammo: this.ammo, turret: turret, fieldRecon: this.fieldRecon, fieldOutcome: this.fieldOutcome
+        version: 1, fuel: this.fuel, ammo: this.ammo, turret: turret, fieldRecon: this.fieldRecon, fieldOutcome: this.fieldOutcome, serviceSpent: this.serviceSpent
     }));
 };
 
@@ -59,6 +70,12 @@ AshCompanyState.prototype.load = function (storage) {
     if (fieldOutcome !== null && (fieldRecon !== 3 || (fieldOutcome !== 'herded' && fieldOutcome !== 'killed'))) {
         throw new Error('Invalid field outcome');
     }
+    const spent = saved.serviceSpent === undefined ? 0 : saved.serviceSpent;
+    const reward = typeof fieldReward === 'function' ? fieldReward(fieldOutcome) : null;
+    if (!Number.isInteger(spent) || spent < 0 || spent > (reward ? reward.credits : 0)) {
+        throw new Error('Invalid service expenses');
+    }
+    this.serviceSpent = spent;
     this.fieldRecon = fieldRecon;
     this.fieldOutcome = fieldOutcome;
     this.applyFieldOutcome();
@@ -137,6 +154,7 @@ if (typeof pc !== 'undefined') {
         this.app.graphicsDevice.canvas.focus();
     };
 }
+
 
 
 
