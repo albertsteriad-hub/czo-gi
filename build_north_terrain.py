@@ -9,10 +9,12 @@ import bpy
 
 BASE=Path(__file__).resolve().parent
 MODEL=BASE/'models'
+MODEL.mkdir(exist_ok=True)
 rng=random.Random(275)
 
 js=r"""
-const w=require('./ash-world.js');
+const fs=require('node:fs');
+const w=require(fs.existsSync('./ash-world.js')?'./ash-world.js':'./playcanvas/ash-world.js');
 const rows=[];
 for(let r=0;r<4;r++){
  const v=[];
@@ -124,4 +126,5 @@ for tier in range(7):
     for i in range(count):
         faces.append((start+i,start+(i+1)%count,start+count))
 export(mesh_object('Northern fir',verts,faces,fir,colors),'NORTH_FIR')
+
 
