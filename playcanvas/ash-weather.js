@@ -11,7 +11,7 @@ function ashWeatherTarget(seconds,z) {
     const state=ASH_WEATHER_STATES[phase];
     return {
         name:state.name, rain:state.rain,
-        fog:Math.min(1,state.fog+northern*.17), light:state.light
+        fog:Math.min(1,state.fog+.12+northern*.30), light:state.light
     };
 }
 
@@ -116,7 +116,7 @@ if (typeof pc !== 'undefined') {
         if (this.onRoad(x,z)) return ashTraction('asphalt',this.wet);
         const local=this.systems.groundHeight(x,z);
         const north=typeof AshWorldData!=='undefined'&&z>=AshWorldData.north.start;
-        if (north&&[0,1].some(function (r) { return Math.abs(z-AshWorldData.riverLine(x,r))<24; })) {
+        if (north&&AshWorldData.north.periods.some(function (_,r) { return Math.abs(z-AshWorldData.riverLine(x,r))<24; })) {
             return ashTraction('mud',this.wet);
         }
         if (local>4.8) return ashTraction('gravel',this.wet);
@@ -162,7 +162,7 @@ if (typeof pc !== 'undefined') {
         this.paintClock=0;
         const f=this.fogAmount,r=this.rain;
         const color=this.base.color.clone().lerp(this.base.color,new pc.Color(.48,.54,.55),Math.min(.85,f*.79+r*.38));
-        this.setFog(this.base.start*(1-.64*f),this.base.end*(1-.56*f-.15*r),color);
+        this.setFog(this.base.start*(1-.74*f),this.base.end*(.91-.62*f-.13*r),color);
         const ambient=.73+.27*this.light;
         this.scene.ambientLight.set(this.base.ambient.r*ambient,this.base.ambient.g*ambient,this.base.ambient.b*ambient);
         if (this.sun&&this.sun.light) this.sun.light.intensity=this.base.light*this.light;
@@ -171,5 +171,6 @@ if (typeof pc !== 'undefined') {
         if (this.label.textContent!==label) this.label.textContent=label;
     };
 }
+
 
 
