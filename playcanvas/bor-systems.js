@@ -207,6 +207,7 @@ BorSystems.prototype.fireCannon = function () {
     this.flashTime = .075;
     var service = this.entity.script.ashService;
     this.weaponCooldown = service ? service.build().cycle : .67;
+    this.entity.fire('bor:shot', this.t6.enabled);
 };
 
 BorSystems.prototype.updateShots = function (dt) {
@@ -291,6 +292,7 @@ BorSystems.prototype.cleanup = function () {
     this.tracerMaterial.destroy();
     this.flashMaterial.destroy();
 };
+
 
 
 
