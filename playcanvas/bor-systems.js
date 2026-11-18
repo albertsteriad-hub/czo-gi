@@ -97,7 +97,7 @@ BorSystems.prototype.makeSide = function (sign) {
         var material = i === 0 ? this.sprocketMaterial : i === 7 ? this.idlerMaterial : this.roadWheelMaterial;
         var e = this.addMesh('Rotating wheel', asset, material, side);
         e.setLocalPosition(x, large ? .749 : .477, -y);
-        return { entity: e, radius: large ? .415 : .336 };
+        return { entity: e, radius: large ? .415 : .336, center: large ? .749 : .477, y: y, fixed: large, offset: 0 };
     }, this);
     var count = Math.round(this.trackLength / .151);
     var shoes = [];
@@ -107,6 +107,39 @@ BorSystems.prototype.makeSide = function (sign) {
     var result = { entity: side, sign: sign, x: x, phase: 0, wheels: wheels, shoes: shoes };
     this.moveTrack(result, 0);
     return result;
+};
+
+BorSystems.prototype.suspend = function (side, dt) {
+    if (!this.suspensionLocal) {
+        this.suspensionLocal=new pc.Mat4();
+        this.suspensionPoint=new pc.Vec3();
+    }
+    this.suspensionLocal.copy(this.visual.getWorldTransform()).invert();
+    var changed=false;
+    side.wheels.forEach(function (wheel) {
+        if (wheel.fixed) return;
+        var p=wheel.entity.getPosition();
+        this.suspensionPoint.set(p.x,this.groundHeight(p.x,p.z),p.z);
+        this.suspensionLocal.transformPoint(this.suspensionPoint,this.suspensionPoint);
+        var target=pc.math.clamp(this.suspensionPoint.y+wheel.radius+.0525-wheel.center,-.19,.22);
+        var next=wheel.offset+(target-wheel.offset)*(1-Math.exp(-dt*10));
+        changed=changed||Math.abs(next-wheel.offset)>.0005;
+        wheel.offset=next;
+        wheel.entity.setLocalPosition(side.x,wheel.center+wheel.offset,-wheel.y);
+    },this);
+    return changed;
+};
+
+BorSystems.prototype.lowerTrackOffset = function (side, distance) {
+    var wheels=side.wheels;
+    for (var i=1;i<wheels.length;i++) {
+        var a=wheels[i-1],b=wheels[i];
+        if (distance<=b.y) {
+            var t=pc.math.clamp((distance-a.y)/(b.y-a.y),0,1);
+            return a.offset+(b.offset-a.offset)*t;
+        }
+    }
+    return 0;
 };
 
 BorSystems.prototype.moveTrack = function (side, distance) {
@@ -120,7 +153,10 @@ BorSystems.prototype.moveTrack = function (side, distance) {
         while (j < segments.length - 1 && s >= segments[j].start + segments[j].length) j++;
         var section = segments[j];
         var t = (s - section.start) / section.length;
-        side.shoes[i].setLocalPosition(side.x, section.point[1] + section.dz*t,
+        var distanceY=section.point[0]+section.dy*t;
+        var height=section.point[1]+section.dz*t;
+        var offset=this.lowerTrackOffset(side,distanceY)*pc.math.clamp((.53-height)/.385,0,1);
+        side.shoes[i].setLocalPosition(side.x, height+offset,
             -(section.point[0] + section.dy*t));
         side.shoes[i].setLocalEulerAngles(section.angle, 0, 0);
     }
@@ -155,7 +191,8 @@ BorSystems.prototype.canOccupy = function (x, z, heading, ignoreFuel) {
     } else if (Math.abs(x) > 54 || z < -53 || z > 162.8) return false;
     var sin = Math.sin(heading), cos = Math.cos(heading);
     var sa = Math.abs(sin), ca = Math.abs(cos);
-    var wide = 2.054, long = 2.97;
+    var service=this.entity.script.ashService;
+    var wide = service && service.isReinforced && service.isReinforced() ? 2.19 : 2.054, long = 2.97;
     function overlaps(ox, oz, w, l) {
         var dx = ox-x, dz = oz-z;
         return Math.abs(dx) < w + wide*ca + long*sa &&
@@ -192,7 +229,8 @@ BorSystems.prototype.fireCannon = function () {
     var company = this.entity.script.ashCompany;
     if (company && company.state && !company.state.consumeRound()) return;
     var turret = this.t6.enabled ? this.t6 : this.p2;
-    var muzzle = new pc.Vec3(0, this.t6.enabled ? .55 : .27, -2.46);
+    var service=this.entity.script.ashService;
+    var muzzle = new pc.Vec3(0,this.t6.enabled?.55:.27,service && service.isLongBarrel && service.isLongBarrel()?-3.24:-2.46);
     var matrix = turret.getWorldTransform();
     var origin = matrix.transformPoint(muzzle);
     var direction = matrix.transformVector(new pc.Vec3(0,0,-1)).normalize();
@@ -205,7 +243,7 @@ BorSystems.prototype.fireCannon = function () {
     this.flash.setLocalScale(.32,.32,.32);
     this.flash.enabled = true;
     this.flashTime = .075;
-    var service = this.entity.script.ashService;
+
     this.weaponCooldown = service ? service.build().cycle : .67;
     this.entity.fire('bor:shot', this.t6.enabled);
 };
@@ -264,10 +302,17 @@ BorSystems.prototype.postUpdate = function (dt) {
     var turn = heading - this.previousHeading;
     this.previousPosition.copy(position);
     this.previousHeading = heading;
-    if (Math.abs(travel) + Math.abs(turn) > .00001) {
+    var dynamics=this.entity.script.ashTrackDynamics;
+    var suspended=dynamics&&dynamics.ready;
+    var moving=Math.abs(travel)+Math.abs(turn)>.00001;
+    if (moving) {
         var company = this.entity.script.ashCompany;
         if (company && company.state) company.state.consumeTravel(travel, turn);
+    }
+    if (moving || suspended) {
         this.runningGear.forEach(function (side) {
+            var adjusted=suspended&&this.suspend(side,Math.min(dt,.05));
+            if (!moving&&!adjusted) return;
             this.moveTrack(side, travel + side.sign * turn * 1.6472);
         }, this);
     }
@@ -292,6 +337,9 @@ BorSystems.prototype.cleanup = function () {
     this.tracerMaterial.destroy();
     this.flashMaterial.destroy();
 };
+
+
+
 
 
 
