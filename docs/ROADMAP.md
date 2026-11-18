@@ -37,3 +37,11 @@ Skrypt ash-company.js przechowuje zapasy i pięć profili załogi. bor-systems.j
 ## Po pierwszym wycinku
 
 W starszym planie przewidziano zakres masy 45–65 t dla ciężkiego pojazdu, trzy wieże, trzy działa i dwa kadłuby, próby wydajności i jazdy na trzech nawierzchniach, eskortę konwoju, odzysk części, wrogie pojazdy i modułowe uszkodzenia. Zachowujemy te cele do rozbudowy po odbiorze pierwszego wycinka z P-2 i T-6.
+
+
+## Rozbudowa mapy 20×
+ 
+Obrys dotychczasowego gruntu miał 122 × 225 jednostek. Rozbudowa używa granic X od −300 do 300 i Z od −150 do 765. Powierzchnia 549 000 jednostek kwadratowych jest dokładnie 20 razy większa. Trzydzieści sektorów po 100 × 183 jednostki dzieli obszar na komórki z detalami włączanymi w pobliżu gracza. Droga, grunty i większe punkty orientacyjne pozostają widoczne niezależnie od przełączania detali. Istniejąca lokacja kontraktu mieści się wewnątrz nowego obrysu.
+ 
+PlayCanvas: ASH_WORLD_EXPANSION pod AC Wasteland. Punkt kontrolny sprzed rozbudowy 049ef469-3608-42ea-9e77-f12ac29913eb. Logika dróg, wysokości i sektorów znajduje się w ash-world.js. bor-systems.js wykorzystuje ją do granic i przyczepienia pojazdu do gruntu, a ash-service.js obsługuje dodatkowe stanowiska.
+
