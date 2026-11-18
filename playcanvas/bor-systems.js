@@ -225,7 +225,9 @@ BorSystems.prototype.updateShots = function (dt) {
         });
         var position = shot.origin.clone().add(shot.direction.clone().mulScalar(nearest));
         if (hit || end > 155 || position.y < this.groundHeight(position.x,position.z)) {
-            if (targetHit && targetHit.entity.name === 'BOR_ROUTE_TARGET') {
+            if (targetHit && targetHit.onHit) {
+                targetHit.onHit();
+            } else if (targetHit && targetHit.entity.name === 'BOR_ROUTE_TARGET') {
                 targetHit.hits++;
                 if (targetHit.hits === 1) targetHit.entity.rotate(0,22,0);
                 if (targetHit.hits >= 2) targetHit.entity.enabled = false;
@@ -275,6 +277,7 @@ BorSystems.prototype.cleanup = function () {
     this.tracerMaterial.destroy();
     this.flashMaterial.destroy();
 };
+
 
 
 
