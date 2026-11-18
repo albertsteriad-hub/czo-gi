@@ -12,6 +12,8 @@ function AshCompanyState() {
     this.fuel = ASH_CAPACITY.fuel;
     this.ammo = ASH_CAPACITY.ammo;
     this.fieldRecon = 0;
+    this.fieldOutcome = null;
+    this.credits = 0;
     this.crew = ASH_CREW.map(function (entry) { return Object.assign({}, entry); });
     this.reputation = { freeMarches: 0, roadCompany: 0 };
 }
@@ -26,9 +28,16 @@ AshCompanyState.prototype.consumeRound = function () {
     return true;
 };
 
+AshCompanyState.prototype.applyFieldOutcome = function () {
+    const reward = typeof fieldReward === 'function' ? fieldReward(this.fieldOutcome) : null;
+    this.credits = reward ? reward.credits : 0;
+    this.reputation.freeMarches = reward ? reward.freeMarches : 0;
+    this.reputation.roadCompany = reward ? reward.roadCompany : 0;
+};
+
 AshCompanyState.prototype.save = function (storage, turret) {
     storage.setItem(ASH_SAVE_KEY, JSON.stringify({
-        version: 1, fuel: this.fuel, ammo: this.ammo, turret: turret, fieldRecon: this.fieldRecon
+        version: 1, fuel: this.fuel, ammo: this.ammo, turret: turret, fieldRecon: this.fieldRecon, fieldOutcome: this.fieldOutcome
     }));
 };
 
@@ -46,7 +55,13 @@ AshCompanyState.prototype.load = function (storage) {
     if (!Number.isInteger(fieldRecon) || fieldRecon < 0 || fieldRecon > 3) {
         throw new Error('Invalid field reconnaissance');
     }
+    const fieldOutcome = saved.fieldOutcome === undefined ? null : saved.fieldOutcome;
+    if (fieldOutcome !== null && (fieldRecon !== 3 || (fieldOutcome !== 'herded' && fieldOutcome !== 'killed'))) {
+        throw new Error('Invalid field outcome');
+    }
     this.fieldRecon = fieldRecon;
+    this.fieldOutcome = fieldOutcome;
+    this.applyFieldOutcome();
     this.fuel = saved.fuel;
     this.ammo = saved.ammo;
     return saved.turret;
@@ -96,7 +111,7 @@ if (typeof pc !== 'undefined') {
     AshCompany.prototype.update = function () {
         const turret = this.turret.t6.enabled ? 'T-6' : 'P-2';
         const text = 'BÓR ' + turret + ' · Paliwo ' + this.state.fuel.toFixed(1) +
-            ' l · Amunicja ' + this.state.ammo;
+            ' l · Amunicja ' + this.state.ammo + ' · Kredyty ' + this.state.credits;
         if (this.readout.textContent !== text) this.readout.textContent = text;
     };
 
@@ -122,5 +137,6 @@ if (typeof pc !== 'undefined') {
         this.app.graphicsDevice.canvas.focus();
     };
 }
+
 
 
