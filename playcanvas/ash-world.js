@@ -1,4 +1,4 @@
-const ASH_WORLD_BOUNDS = { minX:-300, maxX:300, minZ:-150, maxZ:1497 };
+const ASH_WORLD_BOUNDS = { minX:-300, maxX:300, minZ:-150, maxZ:1863 };
 const ASH_WORLD_REGIONS = ['Doliny Osadników','Wielka Puszcza','Żelazny Pas','Zatopione Ziemie','Góry Popiołu'];
 const ASH_WORLD_LINKS = [
     [[17,165.9],[17,224],[42,305],[31,401],[58,503],[39,608],[14,744]],
@@ -11,6 +11,10 @@ const ASH_WORLD_LINKS = [
     [[35,1018],[112,1052],[174,1098],[218,1173],[268,1231],[279,1372]],
     [[18,1200],[100,1265],[181,1342],[279,1372]],
     [[-47,1300],[-121,1360],[-201,1404],[-263,1452]],
+    [[-8,1473],[-3,1541],[30,1620],[11,1710],[57,1794],[48,1844]],
+    [[-3,1541],[-83,1558],[-153,1618],[-171,1720],[-243,1777],[-270,1825]],
+    [[30,1620],[106,1581],[174,1611],[222,1728],[251,1797]],
+    [[11,1710],[-47,1738],[-83,1809],[-113,1840]],
     [[0,-40],[4,-73],[39,-112],[126,-123],[221,-105],[277,-65]],
     [[4,-73],[-58,-93],[-131,-111],[-210,-102],[-277,-60]],
     [[17,224],[91,209],[158,245],[218,302],[275,344]],
@@ -55,7 +59,7 @@ function ashWorldRegion(x,z) {
 
 function ashWorldSectors() {
     const result=[];
-    for (let row=0;row<9;row++) {
+    for (let row=0;row<11;row++) {
         for (let col=0;col<6;col++) {
             const x=-250+col*100,z=-58.5+row*183;
             const region=ashWorldRegion(x,z);
@@ -80,7 +84,7 @@ function ashWorldSectors() {
     return result;
 }
 
-const ASH_NORTH = { start:765, stop:1497, water:-.50, halfWidth:12, periods:[893,1148] };
+const ASH_NORTH = { start:765, stop:1863, water:-.50, halfWidth:12, periods:[893,1148,1679] };
 
 function ashNorthRiverLine(x,index) {
     return ASH_NORTH.periods[index] +
@@ -103,9 +107,12 @@ function ashNorthTerrain(x,z) {
         2.1*Math.sin(z*.033-x*.019)+1.2*Math.sin(x*.062+z*.052);
     const northRidges=(Math.max(0,z-1160)/337)*Math.max(0,Math.abs(x)-82)/190*
         (6+5*Math.sin(x*.037-z*.017));
+    const far=Math.max(0,Math.min(1,(z-1497)/52));
+    const rough=far*(2.7*Math.sin(x*.151+z*.096)+1.3*Math.sin(z*.202-x*.123)+
+        4.4*Math.sin(z*.041+x*.031)*Math.sin(x*.061-z*.027));
     const spread=Math.max(0,Math.min(1,(ashWorldRoadDistance(x,z)-6)/19));
     const bank=ashNorthRiver(x,z);
-    let height=-.055+edge*spread*(rolling+northRidges);
+    let height=-.055+edge*spread*(rolling+northRidges+rough);
     if (bank<ASH_NORTH.halfWidth) {
         const t=bank/ASH_NORTH.halfWidth;
         return -1.52+1.03*t*t;
@@ -210,5 +217,6 @@ if (typeof pc !== 'undefined') {
         this.refresh();
     };
 }
+
 
 
