@@ -10,7 +10,8 @@ if (typeof pc !== 'undefined') {
         this.company = this.entity.script.ashCompany;
         this.turret = this.entity.script.borTurret;
         this.drive = this.entity.script.acHeavyDrive;
-        this.post = this.app.root.findByName('BOR_SERVICE_POST');
+        const regional = this.app.root.findByName('World service posts');
+        this.posts = [this.app.root.findByName('BOR_SERVICE_POST')].concat(regional ? regional.children : []);
         this.panel = document.createElement('aside');
         this.panel.setAttribute('aria-label','Punkt serwisowy');
         this.panel.style.cssText = 'position:fixed;bottom:14px;right:14px;z-index:20;max-width:min(350px,85vw);padding:9px 12px;color:#f2dfb7;background:#23221bef;border:1px solid #987d50;font:13px/1.5 ui-monospace,monospace';
@@ -45,8 +46,10 @@ if (typeof pc !== 'undefined') {
     };
 
     AshService.prototype.atPost = function () {
-        return this.post && Math.abs(this.drive.speed) < .75 &&
-            this.entity.getPosition().distance(this.post.getPosition()) < 6;
+        if (Math.abs(this.drive.speed) >= .75) return false;
+        return this.posts.some(function (post) {
+            return post && this.entity.getPosition().distance(post.getPosition()) < 6;
+        },this);
     };
 
     AshService.prototype.build = function () {
@@ -76,4 +79,5 @@ if (typeof pc !== 'undefined') {
         this.app.graphicsDevice.canvas.focus();
     };
 }
+
 
