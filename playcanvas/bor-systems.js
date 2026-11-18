@@ -142,13 +142,17 @@ BorSystems.prototype.groundHeight = function (x, z) {
             height = Math.max(height, .031);
         }
     }
-    return height;
+    var world = this.entity.script.ashWorld;
+    return world && world.ready ? world.surface(x,z,height) : height;
 };
 
 BorSystems.prototype.canOccupy = function (x, z, heading) {
     var company = this.entity.script.ashCompany;
     if (company && company.state && company.state.fuel <= 0) return false;
-    if (Math.abs(x) > 54 || z < -53 || z > 162.8) return false;
+    var world = this.entity.script.ashWorld;
+    if (world && world.ready) {
+        if (!world.contains(x,z)) return false;
+    } else if (Math.abs(x) > 54 || z < -53 || z > 162.8) return false;
     var sin = Math.sin(heading), cos = Math.cos(heading);
     var sa = Math.abs(sin), ca = Math.abs(cos);
     var wide = 2.054, long = 2.97;
@@ -287,6 +291,7 @@ BorSystems.prototype.cleanup = function () {
     this.tracerMaterial.destroy();
     this.flashMaterial.destroy();
 };
+
 
 
 
