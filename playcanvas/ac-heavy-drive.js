@@ -121,28 +121,38 @@ AcHeavyDrive.prototype.update = function (dt) {
     var old = this.entity.getPosition();
     var weather = this.entity.script.ashWeather;
     var traction = weather && weather.enabled && weather.ready ? weather.sample(old.x, old.z) : null;
-    var reversing = throttle * this.speed < 0;
-    var force = throttle * (reversing ? 225000 : 123000);
-    var damping = throttle ? 0.19 : 0.72;
-    var limit = 1, steerGrip = 1, slope = 0;
-    if (traction) {
-        force *= reversing ? traction.brake : traction.pull;
-        damping *= throttle ? traction.roll : traction.brake;
-        limit = traction.limit;
-        steerGrip = traction.steer;
-        if (throttle || Math.abs(this.speed) > 0.12) {
-            var fx = Math.sin(this.heading) * 2.3, fz = Math.cos(this.heading) * 2.3;
-            var rise = this.groundHeight(old.x + fx, old.z + fz) -
-                this.groundHeight(old.x - fx, old.z - fz);
-            slope = -3.6 * pc.math.clamp(rise / 4.6, -0.55, 0.55);
+    var dynamics=this.entity.script.ashTrackDynamics;
+    if (dynamics && dynamics.ready) {
+        var dxTrack=Math.sin(this.heading)*2.3,dzTrack=Math.cos(this.heading)*2.3;
+        var riseTrack=this.groundHeight(old.x+dxTrack,old.z+dzTrack)-
+            this.groundHeight(old.x-dxTrack,old.z-dzTrack);
+        var response=dynamics.integrate({throttle:throttle,steering:steering,mass:this.mass,
+            traction:traction,grade:pc.math.clamp(riseTrack/4.6,-.55,.55)},dt);
+        this.speed=response.speed;
+        this.turnRate=response.yaw;
+    } else {
+        var reversing = throttle * this.speed < 0;
+        var force = throttle * (reversing ? 225000 : 123000);
+        var damping = throttle ? 0.19 : 0.72;
+        var limit = 1, steerGrip = 1, slope = 0;
+        if (traction) {
+            force *= reversing ? traction.brake : traction.pull;
+            damping *= throttle ? traction.roll : traction.brake;
+            limit = traction.limit;
+            steerGrip = traction.steer;
+            if (throttle || Math.abs(this.speed) > 0.12) {
+                var fx = Math.sin(this.heading) * 2.3, fz = Math.cos(this.heading) * 2.3;
+                var rise = this.groundHeight(old.x + fx, old.z + fz) -
+                    this.groundHeight(old.x - fx, old.z - fz);
+                slope = -3.6 * pc.math.clamp(rise / 4.6, -0.55, 0.55);
+            }
         }
+        this.speed += (force / this.mass + slope - damping * this.speed) * dt;
+        this.speed = pc.math.clamp(this.speed, -4.0 * limit, 10.2 * limit);
+        if (!throttle && Math.abs(this.speed) < 0.035) this.speed = 0;
+        var targetTurn = steering * (0.56 - 0.022 * Math.abs(this.speed)) * steerGrip;
+        this.turnRate += (targetTurn - this.turnRate) * (1 - Math.exp(-dt * 4.2 * steerGrip));
     }
-    this.speed += (force / this.mass + slope - damping * this.speed) * dt;
-    this.speed = pc.math.clamp(this.speed, -4.0 * limit, 10.2 * limit);
-    if (!throttle && Math.abs(this.speed) < 0.035) this.speed = 0;
-
-    var targetTurn = steering * (0.56 - 0.022 * Math.abs(this.speed)) * steerGrip;
-    this.turnRate += (targetTurn - this.turnRate) * (1 - Math.exp(-dt * 4.2 * steerGrip));
     var heading = this.heading + this.turnRate * dt;
     var x = old.x + Math.sin(heading) * this.speed * dt;
     var z = old.z + Math.cos(heading) * this.speed * dt;
@@ -157,6 +167,7 @@ AcHeavyDrive.prototype.update = function (dt) {
         z = old.z;
         this.speed = 0;
         this.turnRate = 0;
+        if (dynamics&&dynamics.ready) dynamics.reset();
     }
     var sin = Math.sin(this.heading);
     var cos = Math.cos(this.heading);
@@ -174,3 +185,5 @@ AcHeavyDrive.prototype.update = function (dt) {
     }
     this.updateCamera(dt, false);
 };
+
+
