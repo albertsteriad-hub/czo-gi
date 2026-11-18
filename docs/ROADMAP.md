@@ -45,3 +45,7 @@ Obrys dotychczasowego gruntu miał 122 × 225 jednostek. Rozbudowa używa granic
  
 PlayCanvas: ASH_WORLD_EXPANSION pod AC Wasteland. Punkt kontrolny sprzed rozbudowy 049ef469-3608-42ea-9e77-f12ac29913eb. Logika dróg, wysokości i sektorów znajduje się w ash-world.js. bor-systems.js wykorzystuje ją do granic i przyczepienia pojazdu do gruntu, a ash-service.js obsługuje dodatkowe stanowiska.
 
+## Północne przedłużenie
+
+Obrys rozszerzono o 732 jednostki wzdłuż osi Z, do granic X od −300 do 300 i Z od −150 do 1497. Mapa ma 54 sektory. build_north_terrain.py generuje z logiki ash-world.js cztery siatki reliefu, dwie rzeki i model jodły. Osobne grupy zachowują drogę i konstrukcje przepraw podczas wyłączania odległych drzew. Woda blokuje przejazd poza przeprawami. Punkt kontrolny przed zmianą a4747d1d-1d3f-4162-8ac5-4f89b48698a0.
+
