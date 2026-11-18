@@ -47,6 +47,8 @@ if (typeof pc !== 'undefined') {
         const positions = this.sites.map(function (site) { return site && site.getPosition(); });
         const point = positions[progress];
         let objective = 'Rozpoznanie zakończone. Załoga ustaliła kierunek tropu.';
+        const encounter = this.entity.script.ashFieldEncounter;
+        if (!stage && encounter) objective = encounter.objective();
         if (stage && point) {
             const range = Math.hypot(point.x - here.x, point.z - here.z);
             objective = range <= 6
@@ -64,4 +66,5 @@ if (typeof pc !== 'undefined') {
         if (this.dialogue.textContent !== dialogue) this.dialogue.textContent = dialogue;
     };
 }
+
 
