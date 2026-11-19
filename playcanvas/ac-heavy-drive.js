@@ -128,7 +128,9 @@ AcHeavyDrive.prototype.update = function (dt) {
         var dxTrack=Math.sin(this.heading)*2.3,dzTrack=Math.cos(this.heading)*2.3;
         var riseTrack=this.groundHeight(old.x+dxTrack,old.z+dzTrack)-
             this.groundHeight(old.x-dxTrack,old.z-dzTrack);
-        var response=dynamics.integrate({throttle:throttle,steering:steering,mass:this.mass,
+        var fleet=this.entity.script.ashFleet;
+        var gauge=3.55*(fleet&&fleet.ready?fleet.model().width/1.16:1);
+        var response=dynamics.integrate({throttle:throttle,steering:steering,mass:this.mass,gauge:gauge,
             traction:traction,grade:pc.math.clamp(riseTrack/4.6,-.55,.55)},dt);
         this.speed=response.speed;
         this.turnRate=response.yaw;
@@ -156,8 +158,9 @@ AcHeavyDrive.prototype.update = function (dt) {
         this.turnRate += (targetTurn - this.turnRate) * (1 - Math.exp(-dt * 4.2 * steerGrip));
     }
     var heading = this.heading + this.turnRate * dt;
-    var x = old.x + Math.sin(heading) * this.speed * dt;
-    var z = old.z + Math.cos(heading) * this.speed * dt;
+    var pathHeading=(this.heading+heading)*.5;
+    var x = old.x + Math.sin(pathHeading) * this.speed * dt;
+    var z = old.z + Math.cos(pathHeading) * this.speed * dt;
     var travel = 0;
     var rotation = 0;
     if (this.canOccupy(x, z, heading)) {
@@ -187,6 +190,7 @@ AcHeavyDrive.prototype.update = function (dt) {
     }
     this.updateCamera(dt, false);
 };
+
 
 
 
