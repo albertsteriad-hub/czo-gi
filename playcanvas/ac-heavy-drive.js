@@ -99,6 +99,8 @@ AcHeavyDrive.prototype.animateTrack = function (index, travel) {
 };
 
 AcHeavyDrive.prototype.updateCamera = function (dt, snap) {
+    var view=this.entity.script.ashVehicleView;
+    if(view&&view.ready){view.place(dt,snap);return;}
     var position = this.entity.getPosition();
     var sin = Math.sin(this.heading);
     var cos = Math.cos(this.heading);
@@ -185,5 +187,6 @@ AcHeavyDrive.prototype.update = function (dt) {
     }
     this.updateCamera(dt, false);
 };
+
 
 
