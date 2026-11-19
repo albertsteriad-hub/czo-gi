@@ -27,6 +27,7 @@ if (typeof pc !== 'undefined') {
         this.button.addEventListener('click',this.toggle.bind(this));
         document.body.append(this.button);
         this.entity.on('bor:shot',this.reportShot,this);
+        this.entity.on('bor:impact',this.reportImpact,this);
         this.on('disable',function () {
             this.button.hidden=true;
             if (this.master) this.master.gain.setTargetAtTime(0,this.audio.currentTime,.05);
@@ -37,6 +38,7 @@ if (typeof pc !== 'undefined') {
         },this);
         this.on('destroy',function () {
             this.entity.off('bor:shot',this.reportShot,this);
+            this.entity.off('bor:impact',this.reportImpact,this);
             this.button.remove();
             if (this.audio) this.audio.close().catch(function () {});
         },this);
@@ -151,10 +153,10 @@ if (typeof pc !== 'undefined') {
         const boom=this.gain(0,this.master);
         const body=audio.createOscillator();
         body.type='sine';
-        body.frequency.setValueAtTime(heavy?88:109,now);
+        body.frequency.setValueAtTime(heavy?64:78,now);
         body.frequency.exponentialRampToValueAtTime(26,now+.20);
         boom.gain.setValueAtTime(.001,now);
-        boom.gain.exponentialRampToValueAtTime(heavy?.46:.34,now+.009);
+        boom.gain.exponentialRampToValueAtTime(heavy?.62:.47,now+.009);
         boom.gain.exponentialRampToValueAtTime(.001,now+.30);
         body.connect(boom);
         body.start(now);
@@ -174,7 +176,7 @@ if (typeof pc !== 'undefined') {
         const shock=this.gain(0,this.master);
         const color=this.band('lowpass',heavy?1650:2270,.60,shock);
         color.frequency.exponentialRampToValueAtTime(300,now+.16);
-        shock.gain.setValueAtTime(.44,now);
+        shock.gain.setValueAtTime(.60,now);
         shock.gain.exponentialRampToValueAtTime(.001,now+tail);
         const cloud=audio.createBufferSource();
         cloud.buffer=this.blast;
@@ -194,6 +196,20 @@ if (typeof pc !== 'undefined') {
         reflection.stop(time+.67);
         reflection.onended=function () { reflection.disconnect(); echoColor.disconnect(); echo.disconnect(); };
     };
+
+    AshAudio.prototype.reportImpact=function (point,type) {
+        if(!this.playing||!this.audio||this.audio.state!=='running')return;
+        const now=this.audio.currentTime,distance=this.entity.getPosition().distance(point);
+        const air=now+distance/340;
+        const layer=this.gain(0,this.master);
+        const material=this.band(type==='water'?'highpass':'lowpass',type==='metal'?2490:type==='water'?420:880,.66,layer);
+        layer.gain.setValueAtTime(Math.min(.26,.46/(1+.076*distance)),air);
+        layer.gain.exponentialRampToValueAtTime(.001,air+.41);
+        const burst=this.audio.createBufferSource();
+        burst.buffer=this.blast;burst.connect(material);burst.start(air,.14);burst.stop(air+.45);
+        burst.onended=function(){burst.disconnect();material.disconnect();layer.disconnect();};
+    };
 }
+
 
 
