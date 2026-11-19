@@ -1,4 +1,4 @@
-const ASH_WORLD_BOUNDS = { minX:-300, maxX:300, minZ:-150, maxZ:1863 };
+const ASH_WORLD_BOUNDS = { minX:-300, maxX:300, minZ:-150, maxZ:2046 };
 const ASH_WORLD_REGIONS = ['Doliny Osadników','Wielka Puszcza','Żelazny Pas','Zatopione Ziemie','Góry Popiołu'];
 const ASH_WORLD_LINKS = [
     [[17,165.9],[17,224],[42,305],[31,401],[58,503],[39,608],[14,744]],
@@ -15,6 +15,9 @@ const ASH_WORLD_LINKS = [
     [[-3,1541],[-83,1558],[-153,1618],[-171,1720],[-243,1777],[-270,1825]],
     [[30,1620],[106,1581],[174,1611],[222,1728],[251,1797]],
     [[11,1710],[-47,1738],[-83,1809],[-113,1840]],
+    [[48,1844],[40,1918],[72,1974],[91,2020]],
+    [[40,1918],[-50,1924],[-134,1958],[-213,2013]],
+    [[72,1974],[152,1951],[235,1993]],
     [[0,-40],[4,-73],[39,-112],[126,-123],[221,-105],[277,-65]],
     [[4,-73],[-58,-93],[-131,-111],[-210,-102],[-277,-60]],
     [[17,224],[91,209],[158,245],[218,302],[275,344]],
@@ -44,6 +47,7 @@ function ashWorldRoadDistance(x,z) {
 }
 
 function ashWorldRegion(x,z) {
+    if (z>=1863) return 1;
     if (z>765) {
         if (Math.abs(ashNorthRiver(x,z))<38) return 3;
         if (z>1200 && (x>140 || x<-110)) return 4;
@@ -59,7 +63,7 @@ function ashWorldRegion(x,z) {
 
 function ashWorldSectors() {
     const result=[];
-    for (let row=0;row<11;row++) {
+    for (let row=0;row<12;row++) {
         for (let col=0;col<6;col++) {
             const x=-250+col*100,z=-58.5+row*183;
             const region=ashWorldRegion(x,z);
@@ -84,7 +88,7 @@ function ashWorldSectors() {
     return result;
 }
 
-const ASH_NORTH = { start:765, stop:1863, water:-.50, halfWidth:12, periods:[893,1148,1679] };
+const ASH_NORTH = { start:765, stop:2046, water:-.50, halfWidth:12, periods:[893,1148,1679] };
 
 function ashNorthRiverLine(x,index) {
     return ASH_NORTH.periods[index] +
@@ -147,7 +151,7 @@ function ashValleyWall(x,z) {
     const sideHeight=ridge(Math.abs(x),[263,274,289,300,318],[0,10,36,53,11],
         .83+.28*Math.sin(z*.028+side*2)+.20*Math.sin(z*.081+side));
     const end=z>900?1:-1;
-    const endHeight=ridge(end*(z-(end>0?1863:-150)),[-30,-12,6,24],[1,18,51,12],
+    const endHeight=ridge(end*(z-(end>0?2046:-150)),[-30,-12,6,24],[1,18,51,12],
         .72+.34*Math.sin(x*.037+end)+.18*Math.cos(x*.081));
     return Math.max(sideHeight,endHeight);
 }
@@ -245,6 +249,7 @@ if (typeof pc !== 'undefined') {
         this.refresh();
     };
 }
+
 
 
 
