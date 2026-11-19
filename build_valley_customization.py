@@ -129,7 +129,7 @@ def wall(sign):
     verts=[];faces=[]
     xs=(263,274,289,300,318)
     for j in range(81):
-        z=-150+j*(2196/80)
+        z=-150+j*(2379/80)
         for i,x in enumerate(xs):
             h=(0,10,36,53,11)[i]
             h*=.83+.28*math.sin(z*.028+sign*2)+.20*math.sin(z*.081+sign)
@@ -141,7 +141,7 @@ def wall(sign):
             faces.append(f)
     b.mesh('Side ridge',verts,faces,rock,0)
 wall(-1);wall(1)
-for z,sign in [(-150,-1),(2046,1)]:
+for z,sign in [(-150,-1),(2229,1)]:
     verts=[];faces=[]
     for i in range(61):
         x=-300+i*10
@@ -154,7 +154,7 @@ for z,sign in [(-150,-1),(2046,1)]:
             f=(a,a+4,a+5,a+1) if sign<0 else (a,a+1,a+5,a+4)
             faces.append(f)
     b.mesh('End ridge',verts,faces,rock,0)
-export([bake(group,'ASH_VALLEY_WALLS')],'ASH_VALLEY_WALLS_EXTENDED')
+export([bake(group,'ASH_VALLEY_WALLS')],'ASH_VALLEY_WALLS_PINE')
 
 group=new('Tunnel passage')
 # Local Y runs along the road. The inner opening is kept free of solid faces.
@@ -183,6 +183,7 @@ v=[(-7,-23,6.7),(7,-23,6.7),(8,23,6.6),(-8,23,6.6),(-11,-10,10.7),(10,-9,13.0),(
 f=[(0,1,5,4),(1,2,6,5),(2,3,7,6),(3,0,4,7),(4,5,6,7)]
 b.mesh('Ridge above tunnel',v,f,gravel,0)
 export([bake(group,'ASH_ROAD_TUNNEL')],'ASH_ROAD_TUNNEL')
+
 
 
 
