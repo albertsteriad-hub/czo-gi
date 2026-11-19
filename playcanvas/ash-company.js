@@ -19,6 +19,8 @@ function AshCompanyState() {
     this.longBarrel = true;
     this.fieldArmor = true;
     this.customParts = [0,1,3,0];
+    this.fleetModel=0;
+    this.fleetEquipment=0;
     this.crew = ASH_CREW.map(function (entry) { return Object.assign({}, entry); });
     this.reputation = { freeMarches: 0, roadCompany: 0 };
 }
@@ -52,7 +54,7 @@ AshCompanyState.prototype.buySupplies = function (kind) {
 
 AshCompanyState.prototype.save = function (storage, turret, pose) {
     storage.setItem(ASH_SAVE_KEY, JSON.stringify({
-        version: 1, fuel: this.fuel, ammo: this.ammo, turret: turret, fieldRecon: this.fieldRecon, fieldOutcome: this.fieldOutcome, serviceSpent: this.serviceSpent, pose: pose || null, longBarrel: this.longBarrel, fieldArmor: this.fieldArmor, customParts: this.customParts
+        version: 1, fuel: this.fuel, ammo: this.ammo, turret: turret, fieldRecon: this.fieldRecon, fieldOutcome: this.fieldOutcome, serviceSpent: this.serviceSpent, pose: pose || null, longBarrel: this.longBarrel, fieldArmor: this.fieldArmor, customParts: this.customParts, fleetModel: this.fleetModel, fleetEquipment: this.fleetEquipment
     }));
 };
 
@@ -89,6 +91,12 @@ AshCompanyState.prototype.load = function (storage) {
     const parts=saved.customParts;
     if (parts!==undefined && (!Array.isArray(parts)||parts.length!==4 ||
         !parts.every(function (v) {return Number.isInteger(v)&&v>=0&&v<5;}))) throw new Error('Invalid customization options');
+    const model=saved.fleetModel===undefined?0:saved.fleetModel;
+    const equipment=saved.fleetEquipment===undefined?0:saved.fleetEquipment;
+    if(!Number.isInteger(model)||model<0||model>4||!Number.isInteger(equipment)||equipment<0||equipment>3)
+        throw new Error('Invalid fleet configuration');
+    this.fleetModel=model;
+    this.fleetEquipment=equipment;
     this.customParts=parts?parts.slice():[saved.turret==='T-6'?1:0,saved.fieldArmor===false?0:1,saved.longBarrel===false?1:3,0];
     this.longBarrel = saved.longBarrel === undefined ? true : saved.longBarrel;
     this.fieldArmor = saved.fieldArmor === undefined ? true : saved.fieldArmor;
@@ -145,7 +153,9 @@ if (typeof pc !== 'undefined') {
 
     AshCompany.prototype.update = function () {
         const turret = this.turret.t6.enabled ? 'T-6' : 'P-2';
-        const text = 'BÓR ' + turret + ' · Paliwo ' + this.state.fuel.toFixed(1) +
+        const fleet=this.entity.script.ashFleet;
+        const vehicle=fleet&&fleet.ready?fleet.model().name.split(' · ')[0]:'BÓR '+turret;
+        const text = vehicle + ' · Paliwo ' + this.state.fuel.toFixed(1) +
             ' l · Amunicja ' + this.state.ammo + ' · Kredyty ' + this.state.credits;
         if (this.readout.textContent !== text) this.readout.textContent = text;
     };
@@ -196,6 +206,8 @@ if (typeof pc !== 'undefined') {
         return true;
     };
 }
+
+
 
 
 
