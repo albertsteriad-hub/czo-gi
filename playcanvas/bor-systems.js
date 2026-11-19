@@ -231,7 +231,9 @@ BorSystems.prototype.fireCannon = function () {
     var turret = this.t6.enabled ? this.t6 : this.p2;
     var service=this.entity.script.ashService;
     var muzzle = new pc.Vec3(0,this.t6.enabled?.55:.27,service && service.isLongBarrel && service.isLongBarrel()?-3.24:-2.46);
-    var matrix = turret.getWorldTransform();
+    var custom=this.entity.script.ashCustomization;
+    if (custom&&custom.ready) muzzle=custom.muzzle();
+    var matrix = custom&&custom.ready ? this.pivot.getWorldTransform() : turret.getWorldTransform();
     var origin = matrix.transformPoint(muzzle);
     var direction = matrix.transformVector(new pc.Vec3(0,0,-1)).normalize();
     var shot = this.effect('BOR projectile', 'box', this.tracerMaterial);
@@ -245,7 +247,7 @@ BorSystems.prototype.fireCannon = function () {
     this.flashTime = .075;
 
     this.weaponCooldown = service ? service.build().cycle : .67;
-    this.entity.fire('bor:shot', this.t6.enabled);
+    this.entity.fire('bor:shot',custom&&custom.ready ? this.entity.script.ashCompany.state.customParts[2]>=3 : this.t6.enabled);
 };
 
 BorSystems.prototype.updateShots = function (dt) {
@@ -337,6 +339,7 @@ BorSystems.prototype.cleanup = function () {
     this.tracerMaterial.destroy();
     this.flashMaterial.destroy();
 };
+
 
 
 
