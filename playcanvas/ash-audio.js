@@ -15,6 +15,8 @@ if (typeof module !== 'undefined' && module.exports) module.exports=ashAudioFram
 
 if (typeof pc !== 'undefined') {
     var AshAudio=pc.createScript('ashAudio');
+    AshAudio.attributes.add('fieldSample',{type:'asset',assetType:'audio'});
+    AshAudio.attributes.add('heavySample',{type:'asset',assetType:'audio'});
 
     AshAudio.prototype.initialize = function () {
         this.drive=this.entity.script.acHeavyDrive;
@@ -106,6 +108,19 @@ if (typeof pc !== 'undefined') {
         this.pulseDepth=this.gain(0,this.tread.gain);
         this.treadPulse=this.osc('triangle',1,this.pulseDepth);
         this.blast=this.noiseBuffer(1.05);
+        this.decoded=[null,null];
+        [this.fieldSample,this.heavySample].forEach(function (asset,index) {
+            if(!asset)return;
+            const buffer=asset.resource&&asset.resource.buffer;
+            if(buffer&&typeof buffer.getChannelData==='function'){this.decoded[index]=buffer;return;}
+            const url=asset.getFileUrl();
+            if(url)fetch(url).then(response=>{
+                if(!response.ok)throw new Error('Cannon sample download failed');
+                return response.arrayBuffer();
+            }).then(bytes=>audio.decodeAudioData(bytes)).then(sample=>{
+                this.decoded[index]=sample;
+            }).catch(function () {});
+        },this);
     };
 
     AshAudio.prototype.toggle = async function () {
@@ -149,6 +164,16 @@ if (typeof pc !== 'undefined') {
     AshAudio.prototype.reportShot = function (heavy) {
         if (!this.playing||!this.audio||this.audio.state!=='running') return;
         const audio=this.audio,now=audio.currentTime;
+        const prepared=this.decoded&&this.decoded[heavy?1:0];
+        if(prepared){
+            const output=this.gain(heavy?.79:.68,this.master);
+            const sample=audio.createBufferSource();
+            sample.buffer=prepared;
+            sample.connect(output);
+            sample.start(now);
+            sample.onended=function(){sample.disconnect();output.disconnect();};
+            return;
+        }
         const tail=heavy?.79:.61;
         const boom=this.gain(0,this.master);
         const body=audio.createOscillator();
@@ -210,6 +235,7 @@ if (typeof pc !== 'undefined') {
         burst.onended=function(){burst.disconnect();material.disconnect();layer.disconnect();};
     };
 }
+
 
 
 
