@@ -242,58 +242,69 @@ BorSystems.prototype.fireCannon = function () {
     shot.setLocalScale(.035,.035,.85);
     shot.setPosition(origin);
     shot.lookAt(origin.clone().add(direction));
-    this.shots.push({ entity: shot, origin: origin, direction: direction, distance: 0 });
+    this.shots.push({ entity:shot, position:origin.clone(), velocity:direction.clone().mulScalar(
+        96+(custom&&custom.ready?this.entity.script.ashCompany.state.customParts[2]*5:0)), age:0 });
     this.flash.setPosition(origin);
     this.flash.setLocalScale(.32,.32,.32);
     this.flash.enabled = true;
-    this.flashTime = .075;
+    this.flashTime = .12;
 
-    this.weaponCooldown = service ? service.build().cycle : .67;
+    this.weaponCooldown = service ? Math.max(3.6,service.build().cycle) : 3.8;
+    this.reloadDuration=this.weaponCooldown;
     this.entity.fire('bor:shot',custom&&custom.ready ? this.entity.script.ashCompany.state.customParts[2]>=3 : this.t6.enabled);
 };
 
+BorSystems.prototype.impactSurface = function (x,z) {
+    const g=this.groundHeight(x,z);
+    const water=typeof AshWorldData!=='undefined'&&z>=AshWorldData.north.start&&
+        g<AshWorldData.north.water+.015;
+    return { y:water?AshWorldData.north.water:g, type:water?'water':'earth' };
+};
+
 BorSystems.prototype.updateShots = function (dt) {
-    var objects = this.barriers.concat(this.targets.filter(function (target) {
-        return target.entity.enabled;
-    }));
-    for (var i = this.shots.length - 1; i >= 0; i--) {
-        var shot = this.shots[i];
-        var end = shot.distance + 95*dt;
-        var ray = new pc.Ray(shot.origin, shot.direction);
-        var point = new pc.Vec3();
-        var nearest = end;
-        var hit = false;
-        var targetHit = null;
-        objects.forEach(function (item) {
-            if (!item.box.intersectsRay(ray,point)) return;
-            var d = point.distance(shot.origin);
-            if (d < shot.distance || d > nearest) return;
-            nearest = d;
-            hit = true;
-            targetHit = item;
-        });
-        this.impactBoxes.forEach(function (box) {
+    const objects=this.barriers.concat(this.targets.filter(function (target) { return target.entity.enabled; }));
+    for (let i=this.shots.length-1;i>=0;i--) {
+        const shot=this.shots[i],origin=shot.position;
+        const delta=shot.velocity.clone().mulScalar(dt);
+        delta.y-=1.65*dt*dt;
+        shot.velocity.y-=3.3*dt;
+        shot.age+=dt;
+        const length=delta.length();
+        const direction=delta.clone().normalize();
+        const ray=new pc.Ray(origin,direction),point=new pc.Vec3();
+        let nearest=length,type=null,target=null;
+        function hit(box,surface,item) {
             if (!box.intersectsRay(ray,point)) return;
-            var d = point.distance(shot.origin);
-            if (d < shot.distance || d > nearest) return;
-            nearest = d;
-            hit = true;
-            targetHit = null;
-        });
-        var position = shot.origin.clone().add(shot.direction.clone().mulScalar(nearest));
-        if (hit || end > 155 || position.y < this.groundHeight(position.x,position.z)) {
-            if (targetHit && targetHit.onHit) {
-                targetHit.onHit();
-            } else if (targetHit && targetHit.entity.name === 'BOR_ROUTE_TARGET') {
-                targetHit.hits++;
-                if (targetHit.hits === 1) targetHit.entity.rotate(0,22,0);
-                if (targetHit.hits >= 2) targetHit.entity.enabled = false;
+            const distance=point.distance(origin);
+            if(distance>nearest)return;
+            nearest=distance;type=surface;target=item;
+        }
+        objects.forEach(function (item) {hit(item.box,item.onHit?'earth':'metal',item);});
+        this.impactBoxes.forEach(function (box) {hit(box,'metal',null);});
+        const end=origin.clone().add(delta);
+        const to=this.impactSurface(end.x,end.z);
+        if(end.y<=to.y) {
+            const from=this.impactSurface(origin.x,origin.z);
+            const a=origin.y-from.y,b=to.y-end.y;
+            const fraction=a<=0?0:Math.max(0,Math.min(1,a/Math.max(.0001,a+b)));
+            const distance=length*fraction;
+            if(distance<=nearest){nearest=distance;type=to.type;target=null;}
+        }
+        if(type) {
+            if(target&&target.onHit) target.onHit();
+            else if(target&&target.entity.name==='BOR_ROUTE_TARGET'){
+                target.hits++;
+                if(target.hits===1)target.entity.rotate(0,22,0);
+                if(target.hits>=2)target.entity.enabled=false;
             }
-            shot.entity.destroy();
-            this.shots.splice(i,1);
-        } else {
-            shot.distance = end;
-            shot.entity.setPosition(position);
+            this.entity.fire('bor:impact',origin.clone().add(direction.mulScalar(nearest)),type);
+        }
+        if(type||shot.age>2.35){
+            shot.entity.destroy();this.shots.splice(i,1);
+        }else{
+            shot.position=end;
+            shot.entity.setPosition(end);
+            shot.entity.lookAt(end.clone().add(direction));
         }
     }
 };
@@ -341,6 +352,7 @@ BorSystems.prototype.cleanup = function () {
     this.tracerMaterial.destroy();
     this.flashMaterial.destroy();
 };
+
 
 
 
