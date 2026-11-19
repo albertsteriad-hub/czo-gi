@@ -70,14 +70,14 @@ if (typeof pc !== 'undefined') {
     AshCustomization.prototype.sync = function () {
         const selected=this.company.state.customParts;
         if (!ashPartsValid(selected)) return;
-        const gunHeight=ASH_PARTS[0][selected[0]].z;
+        const gunHeight=this.gunHeight();
         const changed=selected.some(function (v,i) { return v!==this.saved[i]; },this);
         if (changed) {
             this.turret.selectTurret(selected[0]===1);
             this.parts.forEach(function (items,i) {
                 items.forEach(function (e,j) { e.enabled=j===selected[i]; });
             });
-            this.parts[2][selected[2]].setLocalPosition(0,gunHeight,-.79);
+            this.parts[2][selected[2]].setLocalPosition(0,gunHeight,this.gunBase());
             this.inputs.forEach(function (element,i) { element.value=String(selected[i]); });
             this.saved=selected.slice();
         }
@@ -88,7 +88,9 @@ if (typeof pc !== 'undefined') {
         if (this.service.armor) this.service.armor.enabled=false;
 
         const tint=ASH_PARTS[3][selected[3]].color;
-        const batch=this.base.concat(this.parts.map(function (parts,i) { return parts[selected[i]]; }));
+                const fleet=this.entity.script.ashFleet;
+        const additional=fleet&&fleet.ready&&fleet.last>0?[fleet.hulls[fleet.last-1]]:[];
+        const batch=this.base.concat(additional,this.parts.map(function (parts,i) { return parts[selected[i]]; }));
         batch.forEach(function (e) {
             if (!e||!e.render||!e.render.meshInstances) return;
             e.render.meshInstances.forEach(function (instance) {
@@ -118,13 +120,29 @@ if (typeof pc !== 'undefined') {
 
     AshCustomization.prototype.build = function () {
         const s=this.company.state.customParts;
-        return {label:ASH_PARTS[0][s[0]].n,mass:49000+ASH_PARTS[0][s[0]].mass+
+                const fleet=this.entity.script.ashFleet;
+        const profile=fleet&&fleet.ready?fleet.model():null;
+        return {label:profile?profile.name:ASH_PARTS[0][s[0]].n,mass:(profile?profile.mass:49000)+
+            (profile&&profile.fixed?2100:ASH_PARTS[0][s[0]].mass)+(profile?fleet.equipmentMass():0)+
             ASH_PARTS[1][s[1]].mass+ASH_PARTS[2][s[2]].mass,cycle:.65+.075*s[2]+(s[0]===1?.11:0)};
+    };
+
+    AshCustomization.prototype.gunBase = function () {
+        const fleet=this.entity.script.ashFleet;
+        return fleet&&fleet.ready&&fleet.model().fixed?-1.03:-.79;
+    };
+
+    AshCustomization.prototype.gunHeight = function () {
+        const fleet=this.entity.script.ashFleet;
+        if(fleet&&fleet.ready&&fleet.model().fixed)return .28;
+        return ASH_PARTS[0][this.company.state.customParts[0]].z;
     };
 
     AshCustomization.prototype.muzzle = function () {
         const s=this.company.state.customParts;
-        return new pc.Vec3(0,ASH_PARTS[0][s[0]].z,-.79-ASH_PARTS[2][s[2]].length-.034);
+        return new pc.Vec3(0,this.gunHeight(),this.gunBase()-ASH_PARTS[2][s[2]].length-.034);
     };
 }
+
+
 
