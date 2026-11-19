@@ -132,10 +132,37 @@ function ashNorthGround(x,z) {
     return h00+(ashNorthTerrain(ax,az+3)-h00)*v+(h11-ashNorthTerrain(ax,az+3))*u;
 }
 
+function ashValleyWall(x,z) {
+    function ridge(distance, stops, heights, amplitude) {
+        if (distance<stops[0]) return -Infinity;
+        for (let i=1;i<stops.length;i++) {
+            if (distance<=stops[i]) {
+                const t=(distance-stops[i-1])/(stops[i]-stops[i-1]);
+                return (heights[i-1]+(heights[i]-heights[i-1])*t)*amplitude-.12;
+            }
+        }
+        return heights[heights.length-1]*amplitude-.12;
+    }
+    const side=Math.sign(x)||1;
+    const sideHeight=ridge(Math.abs(x),[263,274,289,300,318],[0,10,36,53,11],
+        .83+.28*Math.sin(z*.028+side*2)+.20*Math.sin(z*.081+side));
+    const end=z>900?1:-1;
+    const endHeight=ridge(end*(z-(end>0?1863:-150)),[-30,-12,6,24],[1,18,51,12],
+        .72+.34*Math.sin(x*.037+end)+.18*Math.cos(x*.081));
+    return Math.max(sideHeight,endHeight);
+}
+
+function ashTunnelOpen(x,z) {
+    const dx=x-16.44,dz=z-785;
+    const along=dx*.0594+dz*.9982,across=dx*.9982-dz*.0594;
+    if (Math.abs(along)>24) return true;
+    return Math.abs(across)<=2.75||Math.abs(across)>49;
+}
+
 function ashWorldGround(sectors,x,z,legacy) {
     if (z>=ASH_NORTH.start) {
         const land=ashNorthGround(x,z);
-        return ashWorldRoadDistance(x,z)<=4.25 ? Math.max(land,.031) : land;
+        return Math.max(ashValleyWall(x,z),ashWorldRoadDistance(x,z)<=4.25 ? Math.max(land,.031) : land);
     }
     const inOld=Math.abs(x)<=61&&z>=-58.5&&z<=166.5;
     let h=inOld?legacy:-.055;
@@ -150,11 +177,11 @@ function ashWorldGround(sectors,x,z,legacy) {
             });
         }
     }
-    return h;
+    return Math.max(h,ashValleyWall(x,z));
 }
 
 const AshWorldData = { bounds:ASH_WORLD_BOUNDS, segments:ASH_WORLD_SEGMENTS, regions:ASH_WORLD_REGIONS,
-    sectors:ashWorldSectors, ground:ashWorldGround, region:ashWorldRegion, north:ASH_NORTH, northTerrain:ashNorthTerrain, northGround:ashNorthGround, riverLine:ashNorthRiverLine, roadDistance:ashWorldRoadDistance };
+    sectors:ashWorldSectors, ground:ashWorldGround, region:ashWorldRegion, north:ASH_NORTH, northTerrain:ashNorthTerrain, northGround:ashNorthGround, riverLine:ashNorthRiverLine, roadDistance:ashWorldRoadDistance, valley:ashValleyWall, tunnelOpen:ashTunnelOpen };
 if (typeof module !== 'undefined' && module.exports) module.exports = AshWorldData;
 
 if (typeof pc !== 'undefined') {
@@ -186,6 +213,7 @@ if (typeof pc !== 'undefined') {
     };
 
     AshWorld.prototype.contains = function (x,z) {
+        if (!ashTunnelOpen(x,z)||ashValleyWall(x,z)>16) return false;
         if (z>=ASH_NORTH.start && ashNorthWater(ashNorthGround(x,z)) && ashWorldRoadDistance(x,z)>2.35) return false;
         return x>=ASH_WORLD_BOUNDS.minX+3&&x<=ASH_WORLD_BOUNDS.maxX-3&&
             z>=ASH_WORLD_BOUNDS.minZ+3&&z<=ASH_WORLD_BOUNDS.maxZ-3;
@@ -217,6 +245,8 @@ if (typeof pc !== 'undefined') {
         this.refresh();
     };
 }
+
+
 
 
 
