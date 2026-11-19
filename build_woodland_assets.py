@@ -103,6 +103,14 @@ for k,(name,height,radius,start,tier,color) in enumerate(species):
                 vertices.extend([(x+dx*.15,y+dy*.15,z+r*(.24 if k==0 else .18)),(x,y,z-.12)])
                 faces=[f for v in range(9) for f in ((v,(v+1)%9,9),((v+1)%9,v,10))]
                 b.mesh('Individual needle sprays',vertices,faces,foliage,0)
+    for j in range(3):
+        center=trunk[-1]
+        z=height*(.88+j*.043)
+        rr=radius*(.18-j*.035)
+        points=[(center[0]+rr*math.cos(i*math.tau/10),center[1]+rr*math.sin(i*math.tau/10),z)
+                for i in range(10)]
+        points.append((center[0],center[1],z+height*.09))
+        b.mesh('Terminal crown',points,[(i,(i+1)%10,10) for i in range(10)],foliage,0)
     ob=b.bake_group(group,name)
     ob.name=name
     uv_project(ob)
@@ -132,4 +140,5 @@ for source,key in [('NORTH_PINE_JOIN','NORTH_PINE_JOIN_PBR'),('NORTH_TERRAIN_8',
     target=MODELS/(key+'.glb')
     export(target)
     preserve_factory_tints(original,target)
+
 
