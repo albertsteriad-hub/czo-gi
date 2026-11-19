@@ -17,10 +17,10 @@ if (typeof pc !== 'undefined') {
         this.panel.style.cssText='position:fixed;left:14px;top:clamp(143px,31vh,225px);z-index:19;display:grid;gap:3px;pointer-events:none;color:#ebddbd;font:11px/1.15 ui-monospace,monospace';
         this.rows=ASH_CREW_PORTRAITS.map(function (member) {
             const card=document.createElement('div');
-            card.style.cssText='display:flex;align-items:center;gap:5px;border:1px solid #71664b;background:#24261fe8;padding:2px 5px 2px 2px;width:min(114px,27vw)';
+            card.style.cssText='display:flex;align-items:center;gap:5px;border:2px solid #71664b;box-shadow:2px 2px 0 #181a15;background:#24261f;padding:2px 5px 2px 2px;width:min(114px,27vw)';
             const avatar=document.createElement('canvas');
             avatar.width=avatar.height=24;
-            avatar.style.cssText='width:26px;height:26px;image-rendering:pixelated;flex:none';
+            avatar.style.cssText='width:36px;height:36px;image-rendering:pixelated;flex:none';
             this.portrait(avatar,member);
             const info=document.createElement('div'),name=document.createElement('strong'),role=document.createElement('div');
             name.textContent=member.label;
@@ -31,9 +31,17 @@ if (typeof pc !== 'undefined') {
             const bar=document.createElement('div');bar.style.cssText='height:100%;background:#a99d64';
             status.append(bar);
             info.append(status);
+            let reload=null;
+            if(member.id==='filip'){
+                reload=document.createElement('canvas');reload.width=reload.height=12;
+                reload.style.cssText='width:18px;height:18px;image-rendering:pixelated;position:absolute;left:77px';
+                card.style.position='relative';
+                reload.setAttribute('aria-label','Stan przeładowania');
+                card.append(reload);
+            }
             card.append(avatar,info);
             this.panel.append(card);
-            return {card,bar,id:member.id};
+            return {card,bar,reload,id:member.id};
         },this);
         document.body.append(this.panel);
         this.on('destroy',function () {this.panel.remove();},this);
@@ -74,8 +82,20 @@ if (typeof pc !== 'undefined') {
             const member=crew.find(m=>m.id===row.id);
             if(!member)return;
             row.bar.style.width=Math.max(0,Math.min(100,member.health))+'%';
+            if(row.reload){
+                const ctx=row.reload.getContext('2d');
+                const time=this.systems.weaponCooldown||0,total=this.systems.reloadDuration||1;
+                const steps=Math.max(0,Math.min(10,Math.floor(10*(1-time/total))));
+                ctx.clearRect(0,0,12,12);
+                ctx.fillStyle='#22251d';ctx.fillRect(0,0,12,12);
+                ctx.fillStyle=time>.05?'#d4ac63':'#9cb975';
+                ctx.fillRect(3,3,6,3);ctx.fillRect(8,4,2,1);
+                ctx.fillStyle='#5b5238';ctx.fillRect(1,9,10,2);
+                ctx.fillStyle=time>.05?'#d4ac63':'#9cb975';ctx.fillRect(1,9,steps,2);
+            }
             row.card.title=activities[i]+' · zdrowie '+member.health;
         });
     };
 }
+
 
