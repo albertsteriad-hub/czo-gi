@@ -90,7 +90,7 @@ AshCompanyState.prototype.load = function (storage) {
         (saved.fieldArmor !== undefined && typeof saved.fieldArmor !== 'boolean')) throw new Error('Invalid vehicle configuration');
     const parts=saved.customParts;
     if (parts!==undefined && (!Array.isArray(parts)||parts.length!==4 ||
-        !parts.every(function (v) {return Number.isInteger(v)&&v>=0&&v<5;}))) throw new Error('Invalid customization options');
+        !parts.every(function (v,i) {return Number.isInteger(v)&&v>=0&&v<(i===0?10:5);}))) throw new Error('Invalid customization options');
     const model=saved.fleetModel===undefined?0:saved.fleetModel;
     const equipment=saved.fleetEquipment===undefined?0:saved.fleetEquipment;
     if(!Number.isInteger(model)||model<0||model>4||!Number.isInteger(equipment)||equipment<0||equipment>3)
@@ -206,6 +206,7 @@ if (typeof pc !== 'undefined') {
         return true;
     };
 }
+
 
 
 
