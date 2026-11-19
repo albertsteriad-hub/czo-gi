@@ -24,7 +24,27 @@ function ashMapWaypoint(point,bounds,roads) {
     return result;
 }
 
-if (typeof module !== 'undefined' && module.exports) module.exports={projection:ashMapProjection,waypoint:ashMapWaypoint};
+const ASH_MAP_CELL=48;
+const ASH_MAP_STORAGE='ash-convoy:1651220:map:v1';
+
+function ashMapKey(x,z) {
+    return Math.floor(x/ASH_MAP_CELL)+','+Math.floor(z/ASH_MAP_CELL);
+}
+
+function ashMapExplore(known,x,z,bounds) {
+    const cx=Math.floor(x/ASH_MAP_CELL),cz=Math.floor(z/ASH_MAP_CELL);
+    let changed=false;
+    for(let ix=cx-2;ix<=cx+2;ix++)for(let iz=cz-2;iz<=cz+2;iz++){
+        const px=(ix+.5)*ASH_MAP_CELL,pz=(iz+.5)*ASH_MAP_CELL;
+        if(Math.hypot(x-px,z-pz)>88||px<bounds.minX-24||px>bounds.maxX+24||
+            pz<bounds.minZ-24||pz>bounds.maxZ+24)continue;
+        const key=ix+','+iz;
+        if(!known.has(key)){known.add(key);changed=true;}
+    }
+    return changed;
+}
+
+if (typeof module !== 'undefined' && module.exports) module.exports={projection:ashMapProjection,waypoint:ashMapWaypoint,key:ashMapKey,explore:ashMapExplore};
 
 if (typeof pc !== 'undefined') {
     var AshNavigation=pc.createScript('ashNavigation');
@@ -34,6 +54,13 @@ if (typeof pc !== 'undefined') {
         this.drive=this.entity.script.acHeavyDrive;
         if (!this.world||!this.world.ready) return;
         this.bounds=AshWorldData.bounds;
+        this.discovery=new Set();
+        try {
+            const cells=JSON.parse(window.localStorage.getItem(ASH_MAP_STORAGE)||'[]');
+            if(Array.isArray(cells))cells.slice(0,3000).forEach(key=>{
+                if(typeof key==='string'&&/^-?\d{1,3},-?\d{1,3}$/.test(key))this.discovery.add(key);
+            });
+        } catch(error) {}
         const old=[[0,-40],[0,64.5],[0,106],[17,137],[17,166]];
         this.roads=old.slice(1).map(function (b,i) {
             const a=old[i],dx=b[0]-a[0],dz=b[1]-a[1];
@@ -107,6 +134,7 @@ if (typeof pc !== 'undefined') {
         const rect=this.canvas.getBoundingClientRect();
         const pos=this.projection.unproject((event.clientX-rect.left)*this.canvas.width/rect.width,
             (event.clientY-rect.top)*this.canvas.height/rect.height);
+        if(!this.discovery.has(ashMapKey(pos.x,pos.z)))return;
         const candidate=ashMapWaypoint(pos,this.bounds,this.roads);
         if (candidate) this.selected=candidate;
         this.draw();
@@ -153,7 +181,7 @@ if (typeof pc !== 'undefined') {
         const p=this.entity.getPosition();
         const frame=this.full?this.bounds:{minX:p.x-136,maxX:p.x+136,minZ:p.z-100,maxZ:p.z+100};
         this.projection=ashMapProjection(frame,width,height,this.full?18:3);
-        ctx.fillStyle='#33392e';
+        ctx.fillStyle='#181b17';
         ctx.fillRect(0,0,width,height);
         ctx.lineCap='round';
         if (this.full) {
@@ -163,11 +191,25 @@ if (typeof pc !== 'undefined') {
             ctx.lineWidth=1;
             ctx.strokeRect(a.x,a.y,b.x-a.x,b.y-a.y);
         }
+        if(ashMapExplore(this.discovery,p.x,p.z,this.bounds)) {
+            try {window.localStorage.setItem(ASH_MAP_STORAGE,JSON.stringify(Array.from(this.discovery)));} catch(error) {}
+        }
+        ctx.save();
+        ctx.beginPath();
+        this.discovery.forEach(key=>{
+            const pair=key.split(',').map(Number);
+            const v=this.projection.project(pair[0]*ASH_MAP_CELL,(pair[1]+1)*ASH_MAP_CELL);
+            const step=this.projection.scale*ASH_MAP_CELL;
+            ctx.rect(v.x,v.y,step+.1,step+.1);
+        });
+        ctx.clip();
+        ctx.fillStyle='#3a4132';ctx.fillRect(0,0,width,height);
         this.rivers.forEach(function (r) { this.lines(r,'#527d7c',this.full?7:12); },this);
         this.roads.forEach(function (s) { this.lines([s.a,s.b],'#9d9170',this.full?2:4); },this);
         this.services.forEach(function (point) { this.pin(point,'#ebc875',2.5,true); },this);
         this.pin(this.questPoint(),'#e78b62',3.5,false);
         this.pin(this.selected,'#a0e8d0',4,false);
+        ctx.restore();
         const arrow=this.projection.project(p.x,p.z);
         ctx.save();
         ctx.translate(arrow.x,arrow.y);
@@ -186,7 +228,7 @@ if (typeof pc !== 'undefined') {
         ctx.fillText('N',9,16);
         this.clearButton.hidden=!this.selected;
         const msg=this.selected?'Znacznik · '+Math.round(Math.hypot(this.selected.x-p.x,this.selected.z-p.z))+' m w linii prostej':
-            (this.full?'Kliknij, aby postawić znacznik. Żółty: serwis. Pomarańczowy: kontrakt.':'');
+            (this.full?'Kliknij odkryty teren, aby postawić znacznik. Żółty: serwis. Pomarańczowy: kontrakt.':'');
         if (this.info.textContent!==msg) this.info.textContent=msg;
     };
 
@@ -199,5 +241,6 @@ if (typeof pc !== 'undefined') {
         this.draw();
     };
 }
+
 
 
