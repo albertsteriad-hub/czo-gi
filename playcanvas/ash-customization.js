@@ -1,6 +1,9 @@
 const ASH_PARTS = [
     [{n:'P-2 Klin',mass:4800,z:.24},{n:'T-6 Kaseta',mass:7300,z:.43},
-     {n:'Jastrząb',mass:5400,z:.27},{n:'Bastion',mass:8500,z:.34},{n:'Radiowiec',mass:6200,z:.37}],
+     {n:'Jastrząb',mass:5400,z:.27},{n:'Bastion',mass:8500,z:.34},{n:'Radiowiec',mass:6200,z:.37},
+     {n:'Grom · klin ciężki',mass:9100,z:.47},{n:'Kuźnia · wieża szturmowa',mass:10200,z:.57},
+     {n:'Wał Ognia · szeroka',mass:9500,z:.42},{n:'Szept · wieża rozpoznawcza',mass:8700,z:.52},
+     {n:'Baszta · blokowa',mass:11100,z:.64}],
     [{n:'Płyty lekkie',mass:900},{n:'Płyty segmentowe',mass:2100},{n:'Ekran listwowy',mass:1400},
      {n:'Kliny boczne',mass:3100},{n:'Pancerz szturmowy',mass:4500}],
     [{n:'Krótka',mass:550,length:1.13},{n:'Uniwersalna',mass:760,length:1.55},
@@ -26,8 +29,8 @@ if (typeof pc !== 'undefined') {
         this.service=this.entity.script.ashService;
         this.turret=this.entity.script.borTurret;
         this.systems=this.entity.script.borSystems;
-        this.parts=['TURRET','ARMOR','BARREL'].map(function (category) {
-            return ASH_PARTS[0].map(function (_,i) {
+        this.parts=['TURRET','ARMOR','BARREL'].map(function (category,index) {
+            return ASH_PARTS[index].map(function (_,i) {
                 return this.entity.findByName('CUST_'+category+'_'+i);
             },this);
         },this);
@@ -124,7 +127,7 @@ if (typeof pc !== 'undefined') {
         const profile=fleet&&fleet.ready?fleet.model():null;
         return {label:profile?profile.name:ASH_PARTS[0][s[0]].n,mass:(profile?profile.mass:49000)+
             (profile&&profile.fixed?2100:ASH_PARTS[0][s[0]].mass)+(profile?fleet.equipmentMass():0)+
-            ASH_PARTS[1][s[1]].mass+ASH_PARTS[2][s[2]].mass,cycle:.65+.075*s[2]+(s[0]===1?.11:0)};
+            ASH_PARTS[1][s[1]].mass+ASH_PARTS[2][s[2]].mass,cycle:3.60+.52*s[2]+(s[0]>=5?.42:s[0]===1?.22:0)};
     };
 
     AshCustomization.prototype.gunBase = function () {
@@ -143,6 +146,7 @@ if (typeof pc !== 'undefined') {
         return new pc.Vec3(0,this.gunHeight(),this.gunBase()-ASH_PARTS[2][s[2]].length-.034);
     };
 }
+
 
 
 
