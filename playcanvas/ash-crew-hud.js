@@ -72,6 +72,7 @@ if (typeof pc !== 'undefined') {
     AshCrewHud.prototype.update = function (dt) {
         this.clock+=dt;if(this.clock<.14)return;this.clock=0;
         const crew=this.company.state.crew;
+        const time=this.systems.weaponCooldown||0,total=this.systems.reloadDuration||1;
         const activities=[
             this.drive.speed>.7?'Dowodzi podczas marszu':'Na stanowisku',
             Math.abs(this.drive.speed)>.7?'Prowadzi BÓR':'Postój',
@@ -84,7 +85,7 @@ if (typeof pc !== 'undefined') {
             row.bar.style.width=Math.max(0,Math.min(100,member.health))+'%';
             if(row.reload){
                 const ctx=row.reload.getContext('2d');
-                const time=this.systems.weaponCooldown||0,total=this.systems.reloadDuration||1;
+
                 const steps=Math.max(0,Math.min(10,Math.floor(10*(1-time/total))));
                 ctx.clearRect(0,0,12,12);
                 ctx.fillStyle='#22251d';ctx.fillRect(0,0,12,12);
@@ -97,5 +98,6 @@ if (typeof pc !== 'undefined') {
         });
     };
 }
+
 
 
