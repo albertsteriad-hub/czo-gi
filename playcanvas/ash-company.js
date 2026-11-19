@@ -18,6 +18,7 @@ function AshCompanyState() {
     this.savedPose = null;
     this.longBarrel = true;
     this.fieldArmor = true;
+    this.customParts = [0,1,3,0];
     this.crew = ASH_CREW.map(function (entry) { return Object.assign({}, entry); });
     this.reputation = { freeMarches: 0, roadCompany: 0 };
 }
@@ -51,7 +52,7 @@ AshCompanyState.prototype.buySupplies = function (kind) {
 
 AshCompanyState.prototype.save = function (storage, turret, pose) {
     storage.setItem(ASH_SAVE_KEY, JSON.stringify({
-        version: 1, fuel: this.fuel, ammo: this.ammo, turret: turret, fieldRecon: this.fieldRecon, fieldOutcome: this.fieldOutcome, serviceSpent: this.serviceSpent, pose: pose || null, longBarrel: this.longBarrel, fieldArmor: this.fieldArmor
+        version: 1, fuel: this.fuel, ammo: this.ammo, turret: turret, fieldRecon: this.fieldRecon, fieldOutcome: this.fieldOutcome, serviceSpent: this.serviceSpent, pose: pose || null, longBarrel: this.longBarrel, fieldArmor: this.fieldArmor, customParts: this.customParts
     }));
 };
 
@@ -85,6 +86,10 @@ AshCompanyState.prototype.load = function (storage) {
     }
     if ((saved.longBarrel !== undefined && typeof saved.longBarrel !== 'boolean') ||
         (saved.fieldArmor !== undefined && typeof saved.fieldArmor !== 'boolean')) throw new Error('Invalid vehicle configuration');
+    const parts=saved.customParts;
+    if (parts!==undefined && (!Array.isArray(parts)||parts.length!==4 ||
+        !parts.every(function (v) {return Number.isInteger(v)&&v>=0&&v<5;}))) throw new Error('Invalid customization options');
+    this.customParts=parts?parts.slice():[saved.turret==='T-6'?1:0,saved.fieldArmor===false?0:1,saved.longBarrel===false?1:3,0];
     this.longBarrel = saved.longBarrel === undefined ? true : saved.longBarrel;
     this.fieldArmor = saved.fieldArmor === undefined ? true : saved.fieldArmor;
     this.savedPose = pose ? { x:pose.x,z:pose.z,heading:Math.atan2(Math.sin(pose.heading),Math.cos(pose.heading)) } : null;
@@ -191,6 +196,7 @@ if (typeof pc !== 'undefined') {
         return true;
     };
 }
+
 
 
 
