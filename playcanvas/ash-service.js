@@ -27,11 +27,13 @@ if (typeof pc !== 'undefined') {
         this.button(kits,'Paliwo +20 l · 12 kr',function () { this.buy('fuel'); });
         this.button(kits,'Amunicja +4 · 14 kr',function () { this.buy('ammo'); });
         const towers = document.createElement('div');
+        this.towerControls=towers;
         towers.setAttribute('aria-label','Porównanie wież');
         this.panel.append(towers);
         this.button(towers,'Wieża P-2',function () { this.mount(false); });
         this.button(towers,'Wieża T-6',function () { this.mount(true); });
         const gear=document.createElement('div');
+        this.gearControls=gear;
         this.panel.append(gear);
         this.button(gear,'Zmień lufę',function () { this.changeModule('longBarrel'); });
         this.button(gear,'Zmień pancerz',function () { this.changeModule('fieldArmor'); });
@@ -62,6 +64,8 @@ if (typeof pc !== 'undefined') {
     };
 
     AshService.prototype.build = function () {
+        const upgrade=this.entity.script.ashCustomization;
+        if (upgrade&&upgrade.ready) return upgrade.build();
         const base=this.turret.t6.enabled ? ASH_BOR_BUILDS.t6 : ASH_BOR_BUILDS.p2;
         const long=this.isLongBarrel();
         const reinforced=this.isReinforced();
@@ -78,6 +82,8 @@ if (typeof pc !== 'undefined') {
     };
 
     AshService.prototype.syncModules = function () {
+        const upgrade=this.entity.script.ashCustomization;
+        if (upgrade&&upgrade.ready) return;
         const long=this.isLongBarrel();
         if (this.longP2&&this.longT6) {
             this.turret.p2.render.enabled=!long;
@@ -102,6 +108,8 @@ if (typeof pc !== 'undefined') {
 
     AshService.prototype.update = function () {
         const visible = !!this.atPost();
+        const upgrade=this.entity.script.ashCustomization;
+        this.towerControls.hidden=this.gearControls.hidden=!!(upgrade&&upgrade.ready);
         if (!visible && !this.panel.hidden) this.status.textContent = '';
         this.panel.hidden = !visible;
         this.syncModules();
@@ -109,7 +117,9 @@ if (typeof pc !== 'undefined') {
         this.drive.mass=stats.mass;
         const summary=stats.label+' · '+(stats.mass/1000).toFixed(1)+' t · '+stats.cycle.toFixed(2)+' s · '+
             (this.isLongBarrel()?'długa lufa':'krótka lufa')+' · '+(this.isReinforced()?'pancerz dodatkowy':'pancerz bazowy');
-        if (this.summary.textContent!==summary) this.summary.textContent=summary;
+        const selected=this.entity.script.ashCustomization;
+        const label=selected&&selected.ready?stats.label+' · '+(stats.mass/1000).toFixed(1)+' t · '+stats.cycle.toFixed(2)+' s':summary;
+        if (this.summary.textContent!==label) this.summary.textContent=label;
     };
 
     AshService.prototype.buy = function (kind) {
@@ -128,11 +138,14 @@ if (typeof pc !== 'undefined') {
         this.drive.mass=stats.mass;
         const summary=stats.label+' · '+(stats.mass/1000).toFixed(1)+' t · '+stats.cycle.toFixed(2)+' s · '+
             (this.isLongBarrel()?'długa lufa':'krótka lufa')+' · '+(this.isReinforced()?'pancerz dodatkowy':'pancerz bazowy');
-        if (this.summary.textContent!==summary) this.summary.textContent=summary;
+        const selected=this.entity.script.ashCustomization;
+        const label=selected&&selected.ready?stats.label+' · '+(stats.mass/1000).toFixed(1)+' t · '+stats.cycle.toFixed(2)+' s':summary;
+        if (this.summary.textContent!==label) this.summary.textContent=label;
         this.status.textContent = 'Zamontowano '+this.build().label+'.';
         this.app.graphicsDevice.canvas.focus();
     };
 }
+
 
 
 
