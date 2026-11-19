@@ -96,17 +96,17 @@ def preserve_factory_tints(source,target):
     raw+=b' '*(-len(raw)%4)
     target.write_bytes(struct.pack('<4sIIII',b'glTF',2,20+len(raw)+len(binary),len(raw),0x4e4f534a)+raw+binary)
 
-for name in ('kadlub','oslony','P2','T6'):
-    bpy.ops.wm.read_factory_settings(use_empty=True)
-    bpy.ops.import_scene.gltf(filepath=str(BASE/'models'/('BOR2_'+name+'.glb')))
-    for obj in bpy.context.scene.objects:
-        if obj.type=='MESH':
-            uv_project(obj)
-            for slot in obj.material_slots:
-                weather_material(slot.material)
-            obj.select_set(True)
-    bpy.ops.export_scene.gltf(filepath=str(BASE/'models'/('BOR3_'+name+'.glb')),
-        export_format='GLB',use_selection=True,export_animations=False,export_vertex_color='ACTIVE')
-    preserve_factory_tints(BASE/'models'/('BOR2_'+name+'.glb'),BASE/'models'/('BOR3_'+name+'.glb'))
-
+if __name__ == '__main__':
+    for name in ('kadlub','oslony','P2','T6'):
+        bpy.ops.wm.read_factory_settings(use_empty=True)
+        bpy.ops.import_scene.gltf(filepath=str(BASE/'models'/('BOR2_'+name+'.glb')))
+        for obj in bpy.context.scene.objects:
+            if obj.type=='MESH':
+                uv_project(obj)
+                for slot in obj.material_slots:
+                    weather_material(slot.material)
+                obj.select_set(True)
+        bpy.ops.export_scene.gltf(filepath=str(BASE/'models'/('BOR3_'+name+'.glb')),
+            export_format='GLB',use_selection=True,export_animations=False,export_vertex_color='ACTIVE')
+        preserve_factory_tints(BASE/'models'/('BOR2_'+name+'.glb'),BASE/'models'/('BOR3_'+name+'.glb'))
 
