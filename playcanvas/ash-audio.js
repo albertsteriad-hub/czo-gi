@@ -103,7 +103,7 @@ if (typeof pc !== 'undefined') {
         noise.start();
         this.pulseDepth=this.gain(0,this.tread.gain);
         this.treadPulse=this.osc('triangle',1,this.pulseDepth);
-        this.blast=this.noiseBuffer(.86);
+        this.blast=this.noiseBuffer(1.05);
     };
 
     AshAudio.prototype.toggle = async function () {
@@ -147,7 +147,7 @@ if (typeof pc !== 'undefined') {
     AshAudio.prototype.reportShot = function (heavy) {
         if (!this.playing||!this.audio||this.audio.state!=='running') return;
         const audio=this.audio,now=audio.currentTime;
-        const tail=heavy?.61:.47;
+        const tail=heavy?.79:.61;
         const boom=this.gain(0,this.master);
         const body=audio.createOscillator();
         body.type='sine';
@@ -161,6 +161,16 @@ if (typeof pc !== 'undefined') {
         body.stop(now+.31);
         body.onended=function () { body.disconnect(); boom.disconnect(); };
 
+        const attack=this.gain(0,this.master);
+        const crack=this.band('highpass',heavy?1380:1920,.70,attack);
+        attack.gain.setValueAtTime(.27,now);
+        attack.gain.exponentialRampToValueAtTime(.001,now+.075);
+        const strike=audio.createBufferSource();
+        strike.buffer=this.blast;
+        strike.connect(crack);
+        strike.start(now,.22);
+        strike.stop(now+.088);
+        strike.onended=function () { strike.disconnect(); crack.disconnect(); attack.disconnect(); };
         const shock=this.gain(0,this.master);
         const color=this.band('lowpass',heavy?1650:2270,.60,shock);
         color.frequency.exponentialRampToValueAtTime(300,now+.16);
@@ -171,7 +181,19 @@ if (typeof pc !== 'undefined') {
         cloud.connect(color);
         cloud.start(now);
         cloud.stop(now+tail+.02);
-        cloud.onended=function () { cloud.disconnect(); color.disconnect(); shock.disconnect(); };
+                cloud.onended=function () { cloud.disconnect(); color.disconnect(); shock.disconnect(); };
+        const echo=this.gain(0,this.master);
+        const echoColor=this.band('lowpass',heavy?445:575,.70,echo);
+        const reflection=audio.createBufferSource();
+        reflection.buffer=this.blast;
+        reflection.connect(echoColor);
+        const time=now+(heavy?.13:.094);
+        echo.gain.setValueAtTime(.095,time);
+        echo.gain.exponentialRampToValueAtTime(.001,time+.65);
+        reflection.start(time,.12);
+        reflection.stop(time+.67);
+        reflection.onended=function () { reflection.disconnect(); echoColor.disconnect(); echo.disconnect(); };
     };
 }
+
 
