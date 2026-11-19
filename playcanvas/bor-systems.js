@@ -193,6 +193,8 @@ BorSystems.prototype.canOccupy = function (x, z, heading, ignoreFuel) {
     var sa = Math.abs(sin), ca = Math.abs(cos);
     var service=this.entity.script.ashService;
     var wide = service && service.isReinforced && service.isReinforced() ? 2.19 : 2.054, long = 2.97;
+    var fleet=this.entity.script.ashFleet;
+    if(fleet&&fleet.ready){var footprint=fleet.model().half;wide=footprint[0];long=footprint[1];}
     function overlaps(ox, oz, w, l) {
         var dx = ox-x, dz = oz-z;
         return Math.abs(dx) < w + wide*ca + long*sa &&
@@ -339,6 +341,7 @@ BorSystems.prototype.cleanup = function () {
     this.tracerMaterial.destroy();
     this.flashMaterial.destroy();
 };
+
 
 
 
